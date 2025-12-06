@@ -1,0 +1,27 @@
+{
+    "name": "Nettoyeur de Noms de Fichiers",
+    "short_name": "NettoyeurFichiers",
+    "description": "Outil pour nettoyer les noms de fichiers en supprimant les caractères invalides",
+    "icons": [
+        {
+            "src": "/assets/icon/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/assets/icon/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "theme_color": "#2575fc",
+    "background_color": "#f5f7fa",
+    "display": "standalone",
+    "scope": "/",
+    "start_url": "/",
+    "orientation": "portrait-primary",
+    "categories": ["utilities", "productivity"],
+    "lang": "fr"
+}

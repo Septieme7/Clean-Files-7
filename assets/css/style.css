@@ -1,0 +1,806 @@
+/* ==========================================================================
+   Fichier: style.css
+   Description: Styles principaux pour l'application Nettoyeur de Noms de Fichiers
+   Architecture: 777
+   ========================================================================== */
+
+/* Reset et bases */
+/* Normalisation des marges et padding pour tous les éléments */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Définition de la police de base et des styles globaux */
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f7fa;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Masquer visuellement mais garder accessible pour les lecteurs d'écran */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Conteneur principal avec largeur maximale */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ==========================================================================
+   En-tête
+   ========================================================================== */
+header {
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    color: white;
+    text-align: center;
+    padding: 2.5rem 1rem;
+    margin-bottom: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.header-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+}
+
+.subtitle {
+    font-size: 1.125rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* ==========================================================================
+   Layout principal
+   ========================================================================== */
+.container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+/* Panels - Cartes de contenu */
+.panel {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.panel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.panel h2 {
+    color: #2575fc;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f0f0f0;
+    font-size: 1.5rem;
+}
+
+.panel h3 {
+    color: #495057;
+    margin: 1.5rem 0 0.75rem;
+    font-size: 1.125rem;
+}
+
+/* ==========================================================================
+   Liste des caractères
+   ========================================================================== */
+.char-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.char-list ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.char-list li {
+    background: white;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1.125rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid #dee2e6;
+}
+
+/* ==========================================================================
+   Contrôles et formulaires
+   ========================================================================== */
+.controls {
+    margin-top: 1.5rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+textarea, input[type="text"] {
+    width: 100%;
+    padding: 0.875rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+    background: #f8f9fa;
+}
+
+textarea:focus, input[type="text"]:focus {
+    border-color: #2575fc;
+    outline: none;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(37, 117, 252, 0.1);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 150px;
+}
+
+/* ==========================================================================
+   Boutons
+   ========================================================================== */
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+    min-width: 140px;
+    text-align: center;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* Couleurs des boutons */
+.btn {
+    background: #2575fc;
+    color: white;
+}
+
+.btn.secondary {
+    background: #6c757d;
+}
+
+.btn.success {
+    background: #28a745;
+}
+
+.btn:hover {
+    background: #1a68e8;
+}
+
+.btn.secondary:hover {
+    background: #5a6268;
+}
+
+.btn.success:hover {
+    background: #218838;
+}
+
+/* Section d'export */
+.export-section {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.export-section input {
+    flex: 1;
+}
+
+/* ==========================================================================
+   Section des résultats
+   ========================================================================== */
+.result-area {
+    margin-top: 3rem;
+}
+
+.result-area h2 {
+    color: #212529;
+    margin-bottom: 1rem;
+    font-size: 1.75rem;
+}
+
+.result-box {
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    min-height: 120px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.placeholder {
+    text-align: center;
+    color: #6c757d;
+    margin-top: 2.5rem;
+    font-style: italic;
+}
+
+/* Items de fichier dans les résultats */
+.file-item {
+    background: white;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 8px;
+    border-left: 4px solid #2575fc;
+    transition: transform 0.2s ease;
+}
+
+.file-item:hover {
+    transform: translateX(4px);
+}
+
+.original-name {
+    color: #6c757d;
+    font-size: 0.9rem;
+    text-decoration: line-through;
+    margin-bottom: 0.25rem;
+    word-break: break-all;
+}
+
+.cleaned-name {
+    color: #28a745;
+    font-weight: 600;
+    font-size: 1.05rem;
+    word-break: break-all;
+}
+
+/* ==========================================================================
+   Messages d'alerte et informations
+   ========================================================================== */
+.warning {
+    background: #fff3cd;
+    color: #856404;
+    padding: 1.25rem;
+    border-radius: 8px;
+    margin-top: 2rem;
+    border-left: 4px solid #ffc107;
+    font-size: 0.95rem;
+}
+
+.warning strong {
+    color: #856404;
+}
+
+/* ==========================================================================
+   Pied de page
+   ========================================================================== */
+footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding: 1.5rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.footer-info {
+    margin-top: 0.5rem;
+    opacity: 0.8;
+}
+
+
+/* ==========================================================================
+   Styles complémentaires pour la navigation
+   ========================================================================== */
+
+/* Ajustements pour la navigation */
+body {
+    padding-top: 0; /* Supprimer le padding top car la nav est sticky */
+}
+
+/* Carte d'information */
+.info-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem auto;
+    max-width: 800px;
+    text-align: center;
+    border: 2px solid #90caf9;
+}
+
+.info-card h3 {
+    color: #1565c0;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.info-card p {
+    color: #0d47a1;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+/* Styles pour la navigation rapide dans les pages */
+.page-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin: 3rem 0;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+}
+
+.nav-prev, .nav-next {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: white;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #495057;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 2px solid #dee2e6;
+    min-width: 200px;
+}
+
+.nav-prev:hover, .nav-next:hover {
+    border-color: #2575fc;
+    color: #2575fc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.nav-prev {
+    text-align: left;
+}
+
+.nav-next {
+    text-align: right;
+    margin-left: auto;
+}
+
+.nav-icon {
+    font-size: 1.25rem;
+}
+
+/* Indicateur de page active */
+.page-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 2rem 0;
+}
+
+.page-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.page-dot.active {
+    background: #2575fc;
+    transform: scale(1.2);
+}
+
+/* Message de retour */
+.back-message {
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #2575fc;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #2575fc;
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   Options de nettoyage
+   ========================================================================== */
+.cleaning-options {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.cleaning-options h4 {
+    color: #495057;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.options-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.option-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    color: #495057;
+    font-size: 0.95rem;
+    user-select: none;
+}
+
+.option-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.checkmark {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border: 2px solid #6c757d;
+    border-radius: 4px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.option-checkbox input:checked + .checkmark {
+    background: #2575fc;
+    border-color: #2575fc;
+}
+
+.option-checkbox input:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.option-checkbox:hover .checkmark {
+    border-color: #2575fc;
+}
+
+/* Indicateur de changement */
+.change-indicator {
+    display: inline-block;
+    margin-left: 0.5rem;
+    color: #28a745;
+    font-size: 1.2rem;
+    vertical-align: middle;
+    animation: fadeIn 0.5s ease;
+}
+
+/* Message d'information */
+.info-message {
+    background: #e7f3ff;
+    border-left: 4px solid #2575fc;
+    padding: 1rem;
+    border-radius: 4px;
+    margin: 1rem 0;
+    color: #0d47a1;
+}
+
+.info-message strong {
+    color: #1565c0;
+}
+
+/* Animation pour l'indicateur de changement */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ==========================================================================
+   Compteur de caractères
+   ========================================================================== */
+.char-counter {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+    text-align: right;
+    padding: 0.25rem 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.char-counter span {
+    font-weight: bold;
+    color: #28a745;
+    transition: color 0.3s ease;
+}
+
+.char-counter span.warning {
+    color: #ffc107;
+}
+
+.char-counter span.danger {
+    color: #dc3545;
+}
+
+/* Options de nettoyage réorganisées */
+.cleaning-options {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.cleaning-options h4 {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.options-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.option-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    color: #495057;
+    font-size: 0.95rem;
+    user-select: none;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.option-checkbox:hover {
+    background: #e9ecef;
+}
+
+.option-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border: 2px solid #6c757d;
+    border-radius: 4px;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.option-checkbox input:checked + .checkmark {
+    background: #2575fc;
+    border-color: #2575fc;
+}
+
+.option-checkbox input:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.option-checkbox:hover .checkmark {
+    border-color: #2575fc;
+}
+
+/* Message d'information */
+.info-message {
+    background: #e7f3ff;
+    border-left: 4px solid #2575fc;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+    color: #0d47a1;
+    font-size: 0.95rem;
+}
+
+.info-message strong {
+    color: #1565c0;
+}
+
+/* Carte d'information */
+.info-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem auto;
+    max-width: 800px;
+    text-align: center;
+    border: 2px solid #90caf9;
+}
+
+.info-card h3 {
+    color: #1565c0;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.info-card p {
+    color: #0d47a1;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+/* ==========================================================================
+   Responsive pour la navigation
+   ========================================================================== */
+@media (max-width: 768px) {
+    .page-navigation {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .nav-prev, .nav-next {
+        min-width: 100%;
+        justify-content: center;
+    }
+    
+    .info-card {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+/* Tablettes */
+@media (max-width: 992px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+    
+    header {
+        padding: 2rem 1rem;
+    }
+    
+    .header-content h1 {
+        font-size: 2rem;
+    }
+}
+
+/* Mobiles */
+@media (max-width: 768px) {
+    body {
+        padding: 15px;
+    }
+    
+    .header-content h1 {
+        font-size: 1.75rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .panel {
+        padding: 1.5rem;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .export-section {
+        flex-direction: column;
+    }
+}
+
+/* Très petits écrans */
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+    
+    .panel {
+        padding: 1.25rem;
+    }
+    
+    .char-list li {
+        font-size: 1rem;
+        padding: 0.375rem 0.5rem;
+    }
+}
+
+/* ==========================================================================
+   Accessibilité - Focus
+   ========================================================================== */
+button:focus, 
+textarea:focus, 
+input:focus {
+    outline: 2px solid #2575fc;
+    outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.file-item {
+    animation: fadeIn 0.3s ease-out;
+}

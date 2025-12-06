@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Meta tags SEO -->
+    <title>Upload et Nettoyage de Fichiers | Renommez vos fichiers en ligne</title>
+    <meta name="description" content="Uploader vos fichiers, nettoyez leurs noms en supprimant les caractères invalides, et téléchargez-les renommés. Outil gratuit et sécurisé.">
+    <meta name="keywords" content="upload fichiers, renommer fichiers, nettoyage noms, caractères invalides, outil en ligne">
+    <meta name="author" content="777 Tools">
+    
+    <!-- Favicons et manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icon/favicon-16x16.png">
+    <link rel="manifest" href="assets/manifest/site.webmanifest">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/nav.css">
+    <link rel="stylesheet" href="assets/css/upload.css">
+    
+    <!-- Open Graph meta tags -->
+    <meta property="og:title" content="Upload et Nettoyage de Fichiers">
+    <meta property="og:description" content="Uploader, nettoyez et téléchargez vos fichiers renommés">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://votredomaine.com/upload.html">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://votredomaine.com/upload.html">
+    
+    <!-- Schema.org markup -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Upload et Nettoyage de Fichiers",
+        "description": "Outil pour uploader, nettoyer et renommer des fichiers",
+        "url": "https://votredomaine.com/upload.html",
+        "applicationCategory": "UtilityApplication",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "operatingSystem": "Any"
+    }
+    </script>
+</head>
+<body>
+    <!-- Navigation principale -->
+    <nav class="main-nav" role="navigation" aria-label="Navigation principale">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="nav-logo-icon">⚡</span>
+                <span>Nettoyeur 777</span>
+            </a>
+            
+            <button class="nav-toggle" aria-label="Menu" aria-expanded="false">
+                ☰
+            </button>
+            
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">
+                    <span class="nav-icon">🏠</span>
+                    Accueil
+                </a>
+                <a href="upload.html" class="nav-link active">
+                    <span class="nav-icon">📁</span>
+                    Upload Fichiers
+                    <span class="nav-badge">Nouveau</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Fil d'Ariane -->
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <div class="breadcrumb-links">
+            <a href="index.html" class="breadcrumb-link">
+                <span>Accueil</span>
+            </a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">Upload Fichiers</span>
+        </div>
+    </nav>
+    
+    <!-- En-tête principal -->
+    <header role="banner">
+        <div class="header-content">
+            <h1>Upload et Nettoyage de Fichiers</h1>
+            <p class="subtitle">Uploader vos fichiers, nettoyez leurs noms et téléchargez-les renommés</p>
+        </div>
+    </header>
+    
+    <!-- Navigation rapide -->
+    <div class="quick-nav">
+        <h3 class="quick-nav-title">Choisissez votre mode de nettoyage :</h3>
+        <div class="quick-nav-buttons">
+            <a href="index.html" class="quick-nav-btn secondary">
+                <span class="quick-nav-icon">📝</span>
+                Mode Texte (Copier/Coller)
+            </a>
+            <a href="upload.html" class="quick-nav-btn primary">
+                <span class="quick-nav-icon">📁</span>
+                Mode Upload (Fichiers réels)
+            </a>
+        </div>
+    </div>
+    
+    <!-- Contenu principal -->
+    <main role="main">
+        <!-- Section d'upload -->
+        <section class="upload-section" aria-labelledby="upload-title">
+            <h2 id="upload-title" class="section-title">Uploader vos Fichiers</h2>
+            
+            <!-- Zone de dépôt -->
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-content">
+                    <div class="upload-icon">📁</div>
+                    <h3>Déposez vos fichiers ici</h3>
+                    <p>ou cliquez pour sélectionner</p>
+                    <input type="file" id="fileInput" multiple accept="*/*" class="file-input">
+                    <label for="fileInput" class="btn btn-primary">Parcourir les fichiers</label>
+                    <p class="upload-hint">Maximum 10 fichiers • 50MB par fichier</p>
+                </div>
+            </div>
+            
+            <!-- Progression -->
+            <div class="upload-progress" id="uploadProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">Préparation de l'upload...</p>
+            </div>
+        </section>
+        
+        <!-- Section de configuration -->
+        <section class="config-section" aria-labelledby="config-title">
+            <h2 id="config-title" class="section-title">Configuration du Nettoyage</h2>
+            
+            <div class="config-grid">
+                <!-- Caractères à remplacer -->
+                <div class="config-card">
+                    <h3>Caractères à Remplacer par des Espaces</h3>
+                    <div class="info-message" style="margin-bottom: 1rem;">
+                        <strong>⚠️ Note :</strong> Tous les caractères listés ci-dessous seront automatiquement remplacés par des espaces dans les noms de fichiers.
+                    </div>
+                    <div class="char-list-preview">
+                        <div class="char-scroll" id="charPreview">
+                            <!-- Caractères affichés dynamiquement -->
+                        </div>
+                        <button id="editCharsBtn" class="btn btn-secondary btn-small">Modifier la liste</button>
+                    </div>
+                </div>
+                
+                <!-- Options de nettoyage -->
+                <div class="config-card">
+                    <h3>Options de Nettoyage</h3>
+                    
+                    <div class="cleaning-options">
+                        <div class="options-group">
+                            <label class="option-checkbox">
+                                <input type="checkbox" id="underscoresOption">
+                                <span class="checkmark"></span>
+                                Remplacer les espaces par des underscores (_)
+                            </label>
+                            <label class="option-checkbox">
+                                <input type="checkbox" id="lowercaseOption">
+                                <span class="checkmark"></span>
+                                Convertir en minuscules
+                            </label>
+                            <label class="option-checkbox">
+                                <input type="checkbox" id="prefixOption">
+                                <span class="checkmark"></span>
+                                Ajouter un préfixe
+                            </label>
+                        </div>
+                        
+                        <div class="prefix-input" id="prefixInputContainer" style="display: none; margin-top: 1rem;">
+                            <input type="text" id="prefixText" placeholder="clean_" class="option-input" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section des fichiers uploadés -->
+        <section class="files-section" aria-labelledby="files-title">
+            <h2 id="files-title" class="section-title">Fichiers à Traiter</h2>
+            
+            <div class="files-container" id="filesContainer">
+                <p class="empty-message">Aucun fichier uploadé</p>
+            </div>
+            
+            <!-- Actions globales -->
+            <div class="global-actions">
+                <button id="cleanAllBtn" class="btn btn-success" disabled>
+                    <span class="btn-icon">✨</span> Nettoyer tous les noms
+                </button>
+                <button id="downloadAllBtn" class="btn btn-primary" disabled>
+                    <span class="btn-icon">⬇️</span> Télécharger tout
+                </button>
+                <button id="clearAllBtn" class="btn btn-secondary">
+                    <span class="btn-icon">🗑️</span> Tout effacer
+                </button>
+            </div>
+        </section>
+        
+        <!-- Note de sécurité -->
+        <div class="security-note" role="note">
+            <div class="security-icon">🔒</div>
+            <div class="security-content">
+                <h4>Vos fichiers sont en sécurité</h4>
+                <p>Tous les traitements sont effectués localement dans votre navigateur. 
+                Aucun fichier n'est envoyé à nos serveurs. Ils sont supprimés de la mémoire 
+                lorsque vous quittez la page.</p>
+            </div>
+        </div>
+        
+        <!-- Navigation entre pages -->
+        <div class="page-navigation">
+            <a href="index.html" class="nav-prev">
+                <span class="nav-icon">←</span>
+                <div>
+                    <div style="font-size: 0.875rem; color: #6c757d;">Page précédente</div>
+                    <div>Mode Texte</div>
+                </div>
+            </a>
+        </div>
+    </main>
+    
+    <!-- Modal pour éditer les caractères -->
+    <div class="modal" id="charModal" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Caractères à Remplacer par des Espaces</h3>
+                <button class="modal-close" aria-label="Fermer">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="char-list-editor">
+                    <div class="char-list-display" id="charListDisplay">
+                        <!-- Liste des caractères éditables -->
+                    </div>
+                    
+                    <div class="char-add-section">
+                        <h4>Ajouter des caractères :</h4>
+                        <div class="char-add-form">
+                            <input type="text" id="newCharInput" placeholder="Tapez ou collez des caractères" maxlength="50">
+                            <div class="char-counter">
+                                <span id="charCount">0</span> caractère(s) détecté(s)
+                            </div>
+                            <button id="addCharBtn" class="btn btn-secondary">Ajouter les caractères</button>
+                        </div>
+                    </div>
+                    
+                    <div class="preset-chars">
+                        <h4>Présélections rapides :</h4>
+                        <div class="preset-buttons">
+                            <button class="preset-btn" data-chars="☺♥♦♣♠♪♫☼►◄">Émoticônes</button>
+                            <button class="preset-btn" data-chars="\\/:*?\"<>|#">Spéciaux</button>
+                            <button class="preset-btn" data-chars=",;.!?()[]{}@&">Ponctuation</button>
+                            <button class="preset-btn" data-chars="  \t\n">Espaces</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="resetCharsBtn" class="btn btn-secondary">Réinitialiser</button>
+                <button id="saveCharsBtn" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation de pied de page -->
+    <footer class="footer-nav" role="contentinfo">
+        <div class="footer-nav-content">
+            <div class="footer-section">
+                <h4>Navigation</h4>
+                <ul class="footer-links">
+                    <li><a href="index.html"><span class="footer-icon">🏠</span> Accueil</a></li>
+                    <li><a href="upload.html"><span class="footer-icon">📁</span> Upload Fichiers</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Fonctionnalités</h4>
+                <ul class="footer-links">
+                    <li><a href="index.html#clean-title"><span class="footer-icon">✨</span> Nettoyage Texte</a></li>
+                    <li><a href="upload.html"><span class="footer-icon">⬆️</span> Upload Fichiers</a></li>
+                    <li><a href="index.html#chars-title"><span class="footer-icon">⚙️</span> Configuration</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h4>À propos</h4>
+                <p style="color: #6c757d; line-height: 1.6;">
+                    Outil de nettoyage de noms de fichiers développé avec l'Architecture 777.
+                    <br>Traitement 100% local et sécurisé.
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer-content" style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e9ecef;">
+            <p>Nettoyeur de Fichiers &copy; 2025 | Architecture 777</p>
+            <p class="footer-info">Conçu pour éliminer les caractères invalides des noms de fichiers</p>
+            <p>PS: Je tiens à remercier MIG pour ce projet, sans toutes ces nombreuses erreurs de téléchargements pas de site WEB. 🤣😉 </p>
+        </div>
+    </footer>
+    
+    <!-- JavaScript -->
+    <script src="assets/js/upload.js" defer></script>
+    
+    <!-- Script pour la navigation mobile -->
+    <script>
+        // Navigation mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.querySelector('.nav-toggle');
+            const navLinks = document.querySelector('.nav-links');
+            
+            if (navToggle) {
+                navToggle.addEventListener('click', function() {
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !isExpanded);
+                    navLinks.classList.toggle('active');
+                    
+                    // Changer l'icône du toggle
+                    this.innerHTML = navLinks.classList.contains('active') ? '✕' : '☰';
+                });
+                
+                // Fermer le menu en cliquant sur un lien
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        navLinks.classList.remove('active');
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navToggle.innerHTML = '☰';
+                    });
+                });
+                
+                // Fermer le menu en cliquant en dehors
+                document.addEventListener('click', function(event) {
+                    if (!event.target.closest('.nav-container') && 
+                        navLinks.classList.contains('active')) {
+                        navLinks.classList.remove('active');
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navToggle.innerHTML = '☰';
+                    }
+                });
+            }
+            
+            // Marquer la page active dans la navigation
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            const navLinksAll = document.querySelectorAll('.nav-link');
+            
+            navLinksAll.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === currentPage || 
+                    (currentPage === '' && href === 'index.html') ||
+                    (currentPage === 'upload.html' && href === 'upload.html')) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+            
+            // Gestion de l'option préfixe
+            const prefixOption = document.getElementById('prefixOption');
+            const prefixInputContainer = document.getElementById('prefixInputContainer');
+            
+            if (prefixOption && prefixInputContainer) {
+                prefixOption.addEventListener('change', function() {
+                    if (this.checked) {
+                        prefixInputContainer.style.display = 'block';
+                    } else {
+                        prefixInputContainer.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Compteur de caractères dans le modal
+            const newCharInput = document.getElementById('newCharInput');
+            const charCountElement = document.getElementById('charCount');
+            
+            if (newCharInput && charCountElement) {
+                newCharInput.addEventListener('input', function() {
+                    const text = this.value;
+                    const uniqueChars = new Set();
+                    
+                    for (let char of text) {
+                        uniqueChars.add(char);
+                    }
+                    
+                    const count = uniqueChars.size;
+                    charCountElement.textContent = count;
+                    
+                    // Changer la couleur en fonction du nombre
+                    if (count === 0) {
+                        charCountElement.style.color = '#6c757d';
+                    } else if (count <= 10) {
+                        charCountElement.style.color = '#28a745';
+                    } else {
+                        charCountElement.style.color = '#dc3545';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
