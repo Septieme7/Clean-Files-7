@@ -1,1 +1,35 @@
-/*    /index.html    200
+[build]
+  publish = "."  # Netlify servira les fichiers à partir de la racine
+  command = ""    # Pas de commande de build nécessaire pour un site statique
+
+# Redirection SPA (Single Page Application)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  condition = "!-s !-f !-d"  # N'applique pas aux fichiers existants
+
+# Headers de sécurité
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Compression
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    Content-Encoding = "gzip"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Content-Encoding = "gzip"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Content-Encoding = "gzip"
