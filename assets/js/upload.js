@@ -223,7 +223,7 @@ function setupActions() {
     // Bouton télécharger tous
     const downloadAllBtn = document.getElementById('downloadAllBtn');
     if (downloadAllBtn) {
-        downloadAllBtn.addEventListener('click', openArchiveModal);
+        downloadAllBtn.addEventListener('click', startParallelDownloads);
     }
     
     // Bouton tout effacer
@@ -707,6 +707,29 @@ async function downloadAllFiles(concurrency = 5) {
     await Promise.all(workers);
     hideProgressBar();
     showNotification(`Téléchargement terminé (${total} fichiers)`, 'success');
+}
+
+/**
+ * Wrapper appelé par le bouton UI. Lit la valeur du select et lance les téléchargements parallèles.
+ */
+function startParallelDownloads() {
+    const sel = document.getElementById('downloadConcurrency');
+    let concurrency = 5;
+    if (sel) {
+        const v = parseInt(sel.value, 10);
+        if (!isNaN(v) && v > 0) concurrency = v;
+    }
+    downloadAllFiles(concurrency).catch(err => {
+        console.error('Erreur lors des téléchargements parallèles:', err);
+        showNotification('Erreur lors des téléchargements. Tentative séquentielle en fallback.', 'warning');
+        // fallback séquentiel: télécharger un par un
+        (async () => {
+            const cleanedFiles = state.files.filter(f => f.cleaned);
+            for (let i = 0; i < cleanedFiles.length; i++) {
+                await new Promise(r => setTimeout(() => { downloadFile(cleanedFiles[i].id, 2000); r(); }, 300));
+            }
+        })();
+    });
 }
 
 // ============================================================================
