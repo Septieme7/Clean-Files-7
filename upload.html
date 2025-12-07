@@ -674,25 +674,6 @@
     <!-- ZIP natif (aucune dépendance externe) -->
     <script src="assets/js/upload.js" defer></script>
 
-    <!-- Modal intrusive pour logiciel manquant (7-Zip / WinRAR) -->
-    <div id="missingSoftwareModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
-        <div class="modal-content" role="document" style="max-width:560px;">
-            <div class="modal-header">
-                <h3>Logiciel manquant</h3>
-                <button class="modal-close" aria-label="Fermer" type="button">×</button>
-            </div>
-            <div class="modal-body">
-                <p id="missingModalText">Le serveur n'a pas trouvé l'outil nécessaire pour créer l'archive demandée.</p>
-                <p>Tu peux installer 7‑Zip (recommandé) ou WinRAR.</p>
-                <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;">
-                    <a id="missingInstall7z" class="btn btn-primary" href="assets/help/install-7zip-windows.html" target="_blank" rel="noopener">Installer 7‑Zip (instructions)</a>
-                    <a id="missingInstallWinRar" class="btn btn-secondary" href="https://www.win-rar.com/" target="_blank" rel="noopener">Télécharger WinRAR</a>
-                    <button id="missingTestNow" class="btn btn-info" type="button">Tester maintenant</button>
-                    <button id="missingDismiss" class="btn btn-small btn-link" type="button">Ignorer</button>
-                    <div id="missingTestResult" style="margin-left:8px;color:#333; font-size:0.95rem;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modal pour logiciel manquant supprimé (fonction serveur retirée) -->
 </body>
 </html>
