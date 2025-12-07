@@ -839,12 +839,7 @@ function crc32(buf) {
  * Compresse un buffer avec DEFLATE simple (pseudo-compression)
  * Utilise une approche simple sans vraie compression
  */
-function deflateSimple(data) {
-    // Pour la démo, on retourne les données brutes
-    // Une vraie compression prendrait trop d'espace en code
-    // Cette fonction marque juste les données comme "non compressées"
-    return { data, isCompressed: false };
-}
+// deflateSimple removed — native ZIP uses stored (no compression) entries
 
 /**
  * Crée un archive ZIP simple
