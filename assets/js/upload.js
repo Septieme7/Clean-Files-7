@@ -82,7 +82,11 @@ let state = {
         useUnderscores: false,  // Remplacer espaces par underscores
         toLowercase: false,     // Convertir en minuscules
         usePrefix: false,       // Ajouter un préfixe
-        prefix: 'clean_'        // Préfixe par défaut
+        prefix: 'clean_',       // Préfixe par défaut
+        appendCounter: false,   // Ajouter suffixe numérique pour doublons
+        suffixText: '',         // Texte personnalisé inséré avant le numéro
+        alwaysAppendSuffix: false // Appliquer suffixe aussi au premier fichier
+        ,suffixOnly: false       // Utiliser uniquement le suffixe comme nom (ne pas inclure le nom original)
     }
 };
 
@@ -206,6 +210,95 @@ function setupOptions() {
             reprocessCleanedFiles();
         });
     }
+
+    // Option: ajouter suffixe numérique pour doublons
+    const appendCounterOption = document.getElementById('appendCounterOption');
+    if (appendCounterOption) {
+        appendCounterOption.addEventListener('change', (e) => {
+            state.options.appendCounter = e.target.checked;
+            saveData();
+            showNotification('Option : suffixe numérique pour doublons ' + (e.target.checked ? 'activée' : 'désactivée'), 'info');
+            // Recalculer ou effacer les noms d'export en fonction du nouvel état
+            const cleanedFiles = state.files.filter(f => f.cleaned);
+            if (state.options.appendCounter || state.options.suffixOnly) {
+                ensureUniqueExportNames(cleanedFiles);
+            } else {
+                cleanedFiles.forEach(f => { delete f.exportName; });
+            }
+            updateFileList();
+        });
+
+        // Afficher/masquer le champ suffixe personnalisé lorsque l'option est cochée
+        const suffixInputContainer = document.getElementById('suffixInputContainer');
+        const suffixTextInput = document.getElementById('suffixText');
+            if (suffixInputContainer) {
+                appendCounterOption.addEventListener('change', (e) => {
+                    const other = document.getElementById('suffixOnlyOption')?.checked || false;
+                    suffixInputContainer.style.display = (e.target.checked || other) ? 'block' : 'none';
+                });
+                // Initial display (prendre en compte suffixOnly si déjà coché)
+                suffixInputContainer.style.display = (appendCounterOption.checked || (document.getElementById('suffixOnlyOption')?.checked || false)) ? 'block' : 'none';
+            }
+
+        if (suffixTextInput) {
+            // Charger valeur existante si présente
+            if (state.options && state.options.suffixText) {
+                suffixTextInput.value = state.options.suffixText;
+            }
+
+            suffixTextInput.addEventListener('input', (e) => {
+                const v = String(e.target.value || '');
+                // Remplacer caractères interdits pour un nom de fichier
+                state.options.suffixText = v.replace(/[<>:\"|?*\\/]/g, '_');
+                saveData();
+                // Si l'option est active, recalculer les export names
+                if (state.options.appendCounter || state.options.suffixOnly) {
+                    const cleanedFiles = state.files.filter(f => f.cleaned);
+                    ensureUniqueExportNames(cleanedFiles);
+                    updateFileList();
+                }
+            });
+            // Checkbox: appliquer suffixe également au premier fichier
+            const alwaysAppendCheckbox = document.getElementById('alwaysAppendSuffix');
+            if (alwaysAppendCheckbox) {
+                alwaysAppendCheckbox.addEventListener('change', (e) => {
+                    state.options.alwaysAppendSuffix = !!e.target.checked;
+                    saveData();
+                    if (state.options.appendCounter || state.options.suffixOnly) {
+                        const cleanedFiles = state.files.filter(f => f.cleaned);
+                        ensureUniqueExportNames(cleanedFiles);
+                        updateFileList();
+                    }
+                });
+                // initial state
+                alwaysAppendCheckbox.checked = !!(state.options && state.options.alwaysAppendSuffix);
+            }
+            // Aperçu supprimé : les noms sont recalculés et visibles directement dans la liste des fichiers nettoyés
+        }
+    }
+
+        // Checkbox: utiliser uniquement le suffixe comme nom (suffix-only)
+        const suffixOnlyCheckbox = document.getElementById('suffixOnlyOption');
+        if (suffixOnlyCheckbox) {
+            suffixOnlyCheckbox.addEventListener('change', (e) => {
+                state.options.suffixOnly = !!e.target.checked;
+                // Afficher le champ suffixe si nécessaire
+                const suffixInputContainerLocal = document.getElementById('suffixInputContainer');
+                if (suffixInputContainerLocal) {
+                    suffixInputContainerLocal.style.display = (state.options.appendCounter || state.options.suffixOnly) ? 'block' : 'none';
+                }
+                saveData();
+                const cleanedFiles = state.files.filter(f => f.cleaned);
+                if (state.options.appendCounter || state.options.suffixOnly) {
+                    ensureUniqueExportNames(cleanedFiles);
+                } else {
+                    cleanedFiles.forEach(f => { delete f.exportName; });
+                }
+                updateFileList();
+            });
+            // initial state restored in loadSavedData but ensure UI consistency here too
+            suffixOnlyCheckbox.checked = !!(state.options && state.options.suffixOnly);
+        }
     
     console.log('⚙️ Options configurées');
 }
@@ -612,6 +705,17 @@ function reprocessCleanedFiles() {
         }
     });
     
+    // Après reprocessing, mettre à jour les exportName si l'option de suffixe est active,
+    // sinon effacer les exportName précédents pour éviter des incohérences.
+    const cleanedFiles = state.files.filter(f => f.cleaned);
+    // Prendre en compte aussi le mode "suffixOnly" : si l'utilisateur souhaite
+    // utiliser uniquement le suffixe comme nom, il faut générer les exportName.
+    if (state.options.appendCounter || state.options.suffixOnly) {
+        ensureUniqueExportNames(cleanedFiles);
+    } else {
+        cleanedFiles.forEach(f => { delete f.exportName; });
+    }
+
     updateFileList();
 }
 
@@ -632,10 +736,17 @@ function downloadFile(fileId) {
     }
     
     try {
+        // Si l'option de suffixe numérique ou suffixOnly est activée, s'assurer que les noms d'export sont calculés
+        if (state.options.appendCounter || state.options.suffixOnly) {
+            const cleanedFiles = state.files.filter(f => f.cleaned);
+            ensureUniqueExportNames(cleanedFiles);
+        }
+
         const url = URL.createObjectURL(fileObj.originalFile);
         const link = document.createElement('a');
         link.href = url;
-        link.download = fileObj.cleanedName || fileObj.originalName;
+        // Utiliser exportName si présent (généré par ensureUniqueExportNames), sinon cleanedName/originalName
+        link.download = fileObj.exportName || fileObj.cleanedName || fileObj.originalName;
         link.style.display = 'none';
         
         document.body.appendChild(link);
@@ -663,6 +774,14 @@ async function downloadAllFiles(concurrency = 5) {
     if (cleanedFiles.length === 0) {
         showNotification('Aucun fichier nettoyé à télécharger', 'warning');
         return;
+    }
+
+    // Générer des noms export uniques si l'option est active
+    if (state.options.appendCounter || state.options.suffixOnly) {
+        ensureUniqueExportNames(cleanedFiles);
+    } else {
+        // Nettoyer tout exportName précédemment défini
+        cleanedFiles.forEach(f => { delete f.exportName; });
     }
 
     const total = cleanedFiles.length;
@@ -707,6 +826,79 @@ async function downloadAllFiles(concurrency = 5) {
     await Promise.all(workers);
     hideProgressBar();
     showNotification(`Téléchargement terminé (${total} fichiers)`, 'success');
+}
+
+/**
+ * Assure des noms d'export uniques pour un ensemble de fichiers.
+ * Ajoute une propriété `exportName` sur chaque objet fichier si nécessaire.
+ * Exemple: file.txt, file1.txt, file2.txt (sans parentheses)
+ * @param {Array} files - tableau d'objets fichier (doit contenir cleanedName/originalName)
+ */
+function ensureUniqueExportNames(files) {
+    const counts = new Map();
+
+    for (const f of files) {
+        const origName = (f.cleanedName || f.originalName) || '';
+        const lastDot = origName.lastIndexOf('.');
+        const ext = (lastDot > 0) ? origName.substring(lastDot) : '';
+
+        // Déterminer la base (sans extension) selon le mode suffixOnly.
+        const userSuffix = String((state.options && state.options.suffixText) || '').trim();
+        const suffixOnlyActive = !!(state.options && state.options.suffixOnly && userSuffix !== '');
+
+        // Préfixe si demandé
+        const prefix = (state.options && state.options.usePrefix && state.options.prefix) ? String(state.options.prefix) : '';
+
+        // baseCore représente le texte de base sur lequel on ajoutera éventuellement le numéro.
+        // Si suffixOnly est actif et que l'utilisateur a fourni un suffixText, baseCore = prefix + suffixText.
+        // Sinon, baseCore est le nom nettoyé (sans extension).
+        let baseCore = '';
+        if (suffixOnlyActive) {
+            baseCore = prefix + userSuffix.replace(/[<>:\"|?*\\/]/g, '_');
+        } else {
+            baseCore = (lastDot > 0) ? origName.substring(0, lastDot) : origName;
+        }
+
+        // Si la base résulte en 'fichier' (nom par défaut), remplacer par le suffixe
+        // ou préfixe si l'utilisateur en a fourni un pour éviter d'avoir 'fichier' seul.
+        const baseLower = String(baseCore || '').toLowerCase();
+        if (baseLower === 'fichier' || baseLower === 'fichier_sans_nom') {
+            if (userSuffix) {
+                // Utiliser le suffixe (avec préfixe si demandé)
+                baseCore = (prefix || '') + userSuffix.replace(/[<>:\"|?*\\/]/g, '_');
+            } else if (prefix) {
+                // Utiliser le préfixe collé au mot par défaut (ex: clean_fichier) pour éviter 'fichier' seul
+                baseCore = prefix + baseCore;
+            }
+        }
+
+        const key = (baseCore || '').toLowerCase();
+        let n = counts.get(key) || 0;
+
+        const always = !!(state.options && state.options.alwaysAppendSuffix);
+
+        // Suffixe inséré entre baseCore et le numéro. Si suffixOnlyActive est vrai,
+        // on évite d'ajouter à nouveau le suffixText parce qu'il fait déjà partie de baseCore.
+        let insertSuffix = '';
+        if (!suffixOnlyActive) {
+            insertSuffix = userSuffix.replace(/[<>:\"|?*\\/]/g, '_');
+        }
+
+        if (n === 0) {
+            if (always) {
+                // Toujours numéroter même pour le premier fichier
+                f.exportName = baseCore + (insertSuffix || '') + '1' + ext;
+            } else {
+                // Premier fichier garde la forme sans numéro
+                f.exportName = baseCore + ext;
+            }
+        } else {
+            // Pour les doublons, ajouter le suffixe (si applicable) puis le numéro
+            f.exportName = baseCore + (insertSuffix || '') + String(n) + ext;
+        }
+
+        counts.set(key, n + 1);
+    }
 }
 
 /**
@@ -844,8 +1036,8 @@ function crc32(buf) {
 /**
  * Crée un archive ZIP simple
  */
-async function createNativeZip(files) {
-    console.log('🔨 Création ZIP natif avec', files.length, 'fichiers');
+async function createNativeZip(files, baseFolder) {
+    console.log('🔨 Création ZIP natif avec', files.length, 'fichiers', baseFolder ? `(dossier: ${baseFolder})` : '');
     
     const parts = [];
     const localHeaders = [];
@@ -854,7 +1046,9 @@ async function createNativeZip(files) {
     // 1. Créer chaque entrée (local header + compressed data)
     for (let i = 0; i < files.length; i++) {
         const fileObj = files[i];
-        const fileName = fileObj.cleanedName || fileObj.originalName;
+        // Placer le fichier dans un dossier si demandé (préserve noms et évite suffixes (1),(2) à l'extraction)
+        const originalFileName = fileObj.cleanedName || fileObj.originalName;
+        const fileName = baseFolder ? `${baseFolder}/${(fileObj.exportName || originalFileName)}` : (fileObj.exportName || originalFileName);
         const fileNameBytes = new TextEncoder().encode(fileName);
         
         // Convertir File en ArrayBuffer
@@ -1067,6 +1261,21 @@ async function createArchive() {
     
     try {
         const archiveName = `cleaned_files_${Date.now()}`;
+        // Reader for custom root folder inside archive (UI optional)
+        const rawCustomFolder = document.getElementById('archiveRootFolder')?.value || '';
+        let baseFolder;
+        if (rawCustomFolder && rawCustomFolder.trim()) {
+            // Sanitiser le nom du dossier : remplacer backslashes, retirer séquences .. et caractères interdits
+            baseFolder = rawCustomFolder.trim()
+                .replace(/\\+/g, '/')
+                .replace(/^\/+/ , '')
+                .replace(/\/+$/ , '')
+                .replace(/\.\.+/g, '')
+                .replace(/[<>:\"|?*]/g, '_');
+            if (!baseFolder) baseFolder = archiveName;
+        } else {
+            baseFolder = archiveName;
+        }
         const totalSize = cleanedFiles.reduce((sum, f) => sum + f.size, 0);
         
         console.log('📦 Création archive ZIP natif', { 
@@ -1092,7 +1301,15 @@ async function createArchive() {
         
         updateProgressBar(75, 'Génération du ZIP...');
         
-        const blob = await createNativeZip(cleanedFiles);
+        // Appliquer noms export uniques si option activée (ou mode suffixOnly)
+        if (state.options.appendCounter || state.options.suffixOnly) {
+            ensureUniqueExportNames(cleanedFiles);
+        } else {
+            cleanedFiles.forEach(f => { delete f.exportName; });
+        }
+
+        // Placer les fichiers dans un dossier interne nommé par le dossier choisi (ou archiveName par défaut)
+        const blob = await createNativeZip(cleanedFiles, baseFolder);
         
         console.log('✅ Archive ZIP généré avec succès', { 
             blobSize: formatFileSize(blob.size),
@@ -1133,7 +1350,7 @@ async function createArchive() {
             size: blob.size,
             filesCount: cleanedFiles.length,
             created: Date.now(),
-            options: { compressionLevel, usePassword: false, enableSplit, archiveFormat }
+            options: { compressionLevel, usePassword: false, enableSplit, archiveFormat, archiveRootFolder: baseFolder }
         });
         
     } catch (error) {
@@ -1198,6 +1415,14 @@ function downloadArchiveFromHistory(index) {
         document.getElementById('usePassword').checked = false; // Ne pas re-demander le mot de passe
         document.getElementById('enableSplit').checked = archiveInfo.options.enableSplit || false;
         document.getElementById('archiveFormat').value = archiveInfo.options.archiveFormat || 'zip';
+        // Restaurer le nom du dossier interne si présent
+        if (archiveInfo.options.archiveRootFolder) {
+            const af = document.getElementById('archiveRootFolder');
+            if (af) af.value = archiveInfo.options.archiveRootFolder;
+        } else {
+            const af = document.getElementById('archiveRootFolder');
+            if (af) af.value = '';
+        }
     }
     
     // Créer une nouvelle archive avec les mêmes options
@@ -1962,6 +2187,18 @@ function loadSavedData() {
             if (prefixInputContainer) {
                 prefixInputContainer.style.display = state.options.usePrefix ? 'block' : 'none';
             }
+            // Nouveau: checkbox suffixe numérique + restaurer le suffixText si présent
+            const appendCounterOption = document.getElementById('appendCounterOption');
+            const suffixTextInput = document.getElementById('suffixText');
+            const suffixInputContainer = document.getElementById('suffixInputContainer');
+            const alwaysAppendCheckbox = document.getElementById('alwaysAppendSuffix');
+            if (appendCounterOption) appendCounterOption.checked = !!state.options.appendCounter;
+            if (suffixTextInput && state.options.suffixText) suffixTextInput.value = state.options.suffixText;
+            // Afficher le champ suffixe si appendCounter OU suffixOnly est activé
+            if (suffixInputContainer) suffixInputContainer.style.display = (state.options.appendCounter || state.options.suffixOnly) ? 'block' : 'none';
+            if (alwaysAppendCheckbox) alwaysAppendCheckbox.checked = !!state.options.alwaysAppendSuffix;
+            const suffixOnlyCheckbox = document.getElementById('suffixOnlyOption');
+            if (suffixOnlyCheckbox) suffixOnlyCheckbox.checked = !!state.options.suffixOnly;
         }
         
         // Charger les caractères

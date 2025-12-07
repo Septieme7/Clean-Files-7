@@ -308,6 +308,33 @@
                                     <span class="checkmark" aria-hidden="true"></span>
                                     <span>Ajouter un préfixe</span>
                                 </label>
+
+                                <!-- Option: Suffixe numérique pour doublons -->
+                                <label class="option-checkbox">
+                                    <input type="checkbox" id="appendCounterOption">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span>Ajouter un suffixe numérique pour les doublons (ex: file, file1, file2)</span>
+                                </label>
+                                <!-- Champ pour personnaliser le suffixe (ex: _copy) -->
+                                <div id="suffixInputContainer" style="display:none; margin-top:8px;">
+                                    <label for="suffixText" class="sr-only">Suffixe personnalisé</label>
+                                    <div style="display:flex;gap:8px;align-items:center;">
+                                        <input type="text" id="suffixText" class="option-input" placeholder="ex: _copy (optionnel)">
+                                    </div>
+                                    <small>Texte ajouté avant le numéro (ex: fichier_copy1.txt). Laisser vide pour juste ajouter le numéro.</small>
+                                    <!-- Option: appliquer le suffixe aussi au premier fichier -->
+                                    <label class="option-checkbox" style="display:block; margin-top:6px;">
+                                        <input type="checkbox" id="alwaysAppendSuffix">
+                                        <span class="checkmark" aria-hidden="true"></span>
+                                        <span>Appliquer le suffixe aussi au premier fichier (ex: fichier_copy1)</span>
+                                    </label>
+                                    <label class="option-checkbox" style="display:block; margin-top:6px;">
+                                        <input type="checkbox" id="suffixOnlyOption">
+                                        <span class="checkmark" aria-hidden="true"></span>
+                                        <span>Utiliser uniquement le suffixe comme nom (ne pas inclure le nom original)</span>
+                                    </label>
+                                    <!-- Aperçu automatique : les noms sont recalculés lors du nettoyage et visibles dans la liste des fichiers -->
+                                </div>
                             </div>
                         </fieldset>
                         
@@ -568,6 +595,13 @@
                         <div id="archiveHistory" class="archive-history-list">
                             <p class="empty-message">Aucune archive créée encore</p>
                         </div>
+                    </div>
+
+                    <!-- Nom du dossier interne dans l'archive -->
+                    <div class="form-group">
+                        <label for="archiveRootFolder">Nom du dossier dans l'archive (optionnel)</label>
+                        <input type="text" id="archiveRootFolder" class="form-control" placeholder="laisser vide pour utiliser le nom généré automatiquement">
+                        <small>Si vous renseignez un nom, les fichiers seront placés dans ce dossier à l'intérieur du ZIP.</small>
                     </div>
                 </div>
 
