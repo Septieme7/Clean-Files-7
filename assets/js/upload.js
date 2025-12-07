@@ -642,8 +642,9 @@ function downloadFile(fileId) {
         link.click();
         document.body.removeChild(link);
         
-        // Libérer l'URL après un court délai
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        // Libérer l'URL après un délai configurable (par défaut 100ms)
+        const revokeDelay = arguments.length >= 2 && typeof arguments[1] === 'number' ? arguments[1] : 100;
+        setTimeout(() => URL.revokeObjectURL(url), revokeDelay);
         
         showNotification(CONFIG.messages.downloadStarted, 'success');
     } catch (error) {
@@ -656,25 +657,56 @@ function downloadFile(fileId) {
  * Télécharge tous les fichiers nettoyés
  * Utilise un délai entre chaque téléchargement pour éviter les blocages
  */
-async function downloadAllFiles() {
+async function downloadAllFiles(concurrency = 5) {
     const cleanedFiles = state.files.filter(f => f.cleaned);
     
     if (cleanedFiles.length === 0) {
         showNotification('Aucun fichier nettoyé à télécharger', 'warning');
         return;
     }
-    
-    showNotification(`Démarrage du téléchargement de ${cleanedFiles.length} fichier(s)...`, 'info');
-    
-    // Télécharger avec un délai de 300ms entre chaque fichier
-    for (let i = 0; i < cleanedFiles.length; i++) {
-        await new Promise(resolve => {
-            setTimeout(() => {
-                downloadFile(cleanedFiles[i].id);
-                resolve();
-            }, i * 300);
-        });
+
+    const total = cleanedFiles.length;
+    showNotification(`Démarrage du téléchargement de ${total} fichier(s) (par ${concurrency} parallèles)...`, 'info');
+    showProgressBar();
+
+    let index = 0;
+    let completed = 0;
+
+    // Worker qui prend le prochain fichier et déclenche le téléchargement
+    async function worker(id) {
+        while (true) {
+            let i;
+            // Prendre un index atomique
+            i = index++;
+            if (i >= total) break;
+
+            const fileObj = cleanedFiles[i];
+            try {
+                // Démarrer le téléchargement et laisser 2000ms avant de libérer l'URL
+                downloadFile(fileObj.id, 2000);
+            } catch (e) {
+                console.error('Erreur lors du déclenchement du téléchargement:', e);
+            }
+
+            completed++;
+            const percent = Math.round((completed / total) * 100);
+            updateProgressBar(percent, `Téléchargement ${completed}/${total}`);
+
+            // Petite pause pour éviter d'ouvrir trop d'onglets en même temps
+            await new Promise(r => setTimeout(r, 150));
+        }
     }
+
+    // Lancer N workers
+    const workers = [];
+    const actualConcurrency = Math.max(1, Math.min(concurrency, total));
+    for (let w = 0; w < actualConcurrency; w++) {
+        workers.push(worker(w));
+    }
+
+    await Promise.all(workers);
+    hideProgressBar();
+    showNotification(`Téléchargement terminé (${total} fichiers)`, 'success');
 }
 
 // ============================================================================
