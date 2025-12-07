@@ -1,406 +1,691 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <!-- ================================================================
+         Fichier: upload.html
+         Description: Page d'upload et nettoyage de fichiers
+         Limites: 2 Go/fichier - 10 Go total - 500 fichiers
+         Architecture: 777
+         SEO: Optimisé pour le référencement
+         Responsive: Mobile-first design
+         ================================================================ -->
+    
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Meta tags SEO -->
-    <title>Upload et Nettoyage de Fichiers | Renommez vos fichiers en ligne</title>
-    <meta name="description" content="Uploader vos fichiers, nettoyez leurs noms en supprimant les caractères invalides, et téléchargez-les renommés. Outil gratuit et sécurisé.">
-    <meta name="keywords" content="upload fichiers, renommer fichiers, nettoyage noms, caractères invalides, outil en ligne">
+    <!-- === Viewport pour responsive === -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    
+    <!-- === Meta tags SEO essentiels === -->
+    <title>Upload et Nettoyage de Fichiers | 2Go/fichier - 500 fichiers | Gratuit</title>
+    <meta name="description" content="Uploadez jusqu'à 500 fichiers (2 Go chacun, 10 Go total), nettoyez leurs noms en supprimant les caractères invalides, et téléchargez-les renommés. Traitement 100% local et sécurisé.">
+    <meta name="keywords" content="upload fichiers, renommer fichiers, nettoyage noms, caractères invalides, outil en ligne, gros fichiers, batch rename, file cleaner">
     <meta name="author" content="777 Tools">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="French">
     
-    <!-- Favicons et manifest -->
+    <!-- === Favicons et manifest PWA === -->
     <link rel="apple-touch-icon" sizes="180x180" href="assets/icon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/icon/favicon-16x16.png">
     <link rel="manifest" href="assets/manifest/site.webmanifest">
+    <meta name="theme-color" content="#2575fc">
+    <meta name="msapplication-TileColor" content="#2575fc">
     
-    <!-- CSS -->
+    <!-- === Feuilles de styles CSS === -->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/nav.css">
     <link rel="stylesheet" href="assets/css/upload.css">
     
-    <!-- Open Graph meta tags -->
-    <meta property="og:title" content="Upload et Nettoyage de Fichiers">
-    <meta property="og:description" content="Uploader, nettoyez et téléchargez vos fichiers renommés">
+    <!-- === Preconnect pour performances === -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    
+    <!-- === Open Graph (Facebook, LinkedIn) === -->
+    <meta property="og:title" content="Upload et Nettoyage de Fichiers Pro | 500 fichiers, 2Go chacun">
+    <meta property="og:description" content="Outil gratuit pour nettoyer les noms de fichiers. Jusqu'à 500 fichiers, 2 Go par fichier, 10 Go total. 100% sécurisé.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://cleanfiles7.netlify.app/upload.html">
+    <meta property="og:site_name" content="Nettoyeur 777">
+    <meta property="og:locale" content="fr_FR">
     
-    <!-- Canonical URL -->
+    <!-- === Twitter Cards === -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Upload et Nettoyage de Fichiers Pro">
+    <meta name="twitter:description" content="Uploadez jusqu'à 500 fichiers, nettoyez leurs noms, téléchargez-les renommés.">
+    
+    <!-- === Canonical URL === -->
     <link rel="canonical" href="https://cleanfiles7.netlify.app/upload.html">
     
-    <!-- Schema.org markup -->
+    <!-- === Alternate pour multilingue (si applicable) === -->
+    <link rel="alternate" hreflang="fr" href="https://cleanfiles7.netlify.app/upload.html">
+    
+    <!-- === Schema.org JSON-LD === -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "WebApplication",
-        "name": "Upload et Nettoyage de Fichiers",
-        "description": "Outil pour uploader, nettoyer et renommer des fichiers",
-        "url": "https://votredomaine.com/upload.html",
+        "name": "Upload et Nettoyage de Fichiers Pro",
+        "alternateName": "Nettoyeur 777 Upload",
+        "description": "Outil professionnel pour uploader jusqu'à 500 fichiers (2 Go chacun, 10 Go total), nettoyer leurs noms et les télécharger renommés. Traitement 100% local.",
+        "url": "https://cleanfiles7.netlify.app/upload.html",
         "applicationCategory": "UtilityApplication",
-        "browserRequirements": "Requires JavaScript. Requires HTML5.",
-        "operatingSystem": "Any"
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript, HTML5, File API",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR"
+        },
+        "featureList": [
+            "Upload jusqu'à 500 fichiers",
+            "2 Go par fichier maximum",
+            "10 Go de taille totale",
+            "Traitement 100% local",
+            "Aucun envoi serveur",
+            "Nettoyage des caractères spéciaux"
+        ]
     }
     </script>
 </head>
 <body>
-    <!-- Navigation principale -->
+    <!-- ================================================================
+         NAVIGATION PRINCIPALE
+         Barre de navigation sticky avec logo et liens
+         Accessible et responsive
+         ================================================================ -->
     <nav class="main-nav" role="navigation" aria-label="Navigation principale">
         <div class="nav-container">
-            <a href="index.html" class="nav-logo">
-                <span class="nav-logo-icon">⚡</span>
+            <!-- Logo cliquable vers accueil -->
+            <a href="index.html" class="nav-logo" aria-label="Retour à l'accueil">
+                <span class="nav-logo-icon" aria-hidden="true">⚡</span>
                 <span>Nettoyeur 777</span>
             </a>
             
-            <button class="nav-toggle" aria-label="Menu" aria-expanded="false">
+            <!-- Bouton menu mobile (hamburger) -->
+            <button class="nav-toggle" 
+                    aria-label="Ouvrir le menu de navigation" 
+                    aria-expanded="false"
+                    aria-controls="navLinks">
                 ☰
             </button>
             
-            <div class="nav-links">
-                <a href="index.html" class="nav-link">
-                    <span class="nav-icon">🏠</span>
-                    Accueil
+            <!-- Liens de navigation -->
+            <div class="nav-links" id="navLinks" role="menubar">
+                    <span class="nav-icon" aria-hidden="true">🏠</span>
+                    <span>Accueil</span>
                 </a>
-                <a href="upload.html" class="nav-link active">
-                    <span class="nav-icon">📁</span>
-                    Upload Fichiers
-                    <span class="nav-badge">Nouveau</span>
+                <a href="upload.html" class="nav-link active" role="menuitem" aria-current="page">
+                            <option value="7z">7Z (Meilleure compression - Nécessite 7-Zip)</option>
+                            <option value="rar">RAR (Format propriétaire - Nécessite WinRAR)</option>
+                    <span class="nav-badge" aria-label="Nouvelle fonctionnalité">Pro</span>
                 </a>
             </div>
         </div>
     </nav>
     
-    <!-- Fil d'Ariane -->
+    <!-- ================================================================
+         FIL D'ARIANE (BREADCRUMB)
+         Améliore le SEO et la navigation
+         ================================================================ -->
     <nav class="breadcrumb" aria-label="Fil d'Ariane">
         <div class="breadcrumb-links">
             <a href="index.html" class="breadcrumb-link">
                 <span>Accueil</span>
             </a>
-            <span class="breadcrumb-separator">/</span>
-            <span class="breadcrumb-current">Upload Fichiers</span>
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
+            <span class="breadcrumb-current" aria-current="page">Upload Fichiers</span>
         </div>
     </nav>
     
-    <!-- En-tête principal -->
+    <!-- ================================================================
+         EN-TÊTE PRINCIPAL
+         Titre H1 unique pour le SEO
+         ================================================================ -->
     <header role="banner">
         <div class="header-content">
             <h1>Upload et Nettoyage de Fichiers</h1>
-            <p class="subtitle">Uploader vos fichiers, nettoyez leurs noms et téléchargez-les renommés</p>
+            <p class="subtitle">Uploadez vos fichiers, nettoyez leurs noms et téléchargez-les renommés</p>
+            
+            <!-- Badges des capacités pour le SEO et UX -->
+            <div class="capacity-badges" role="list" aria-label="Capacités du système">
+                <div class="capacity-badge" role="listitem">
+                    <span class="badge-icon" aria-hidden="true">📁</span>
+                    <span>Max <span class="badge-value">500</span> fichiers</span>
+                </div>
+                <div class="capacity-badge" role="listitem">
+                    <span class="badge-icon" aria-hidden="true">💾</span>
+                    <span><span class="badge-value">2 Go</span> / fichier</span>
+                </div>
+                <div class="capacity-badge" role="listitem">
+                    <span class="badge-icon" aria-hidden="true">📊</span>
+                    <span><span class="badge-value">10 Go</span> total</span>
+                </div>
+            </div>
         </div>
     </header>
     
-    <!-- Navigation rapide -->
-    <div class="quick-nav">
-        <h3 class="quick-nav-title">Choisissez votre mode de nettoyage :</h3>
+    <!-- ================================================================
+         NAVIGATION RAPIDE
+         Choix entre les deux modes de l'application
+         ================================================================ -->
+    <section class="quick-nav" aria-labelledby="quick-nav-title">
+        <h2 id="quick-nav-title" class="quick-nav-title">Choisissez votre mode de nettoyage</h2>
         <div class="quick-nav-buttons">
             <a href="index.html" class="quick-nav-btn secondary">
-                <span class="quick-nav-icon">📝</span>
-                Mode Texte (Copier/Coller)
+                <span class="quick-nav-icon" aria-hidden="true">📝</span>
+                <span>Mode Texte (Copier/Coller)</span>
             </a>
-            <a href="upload.html" class="quick-nav-btn primary">
-                <span class="quick-nav-icon">📁</span>
-                Mode Upload (Fichiers réels)
+            <a href="upload.html" class="quick-nav-btn primary" aria-current="page">
+                <span class="quick-nav-icon" aria-hidden="true">📁</span>
+                <span>Mode Upload (Fichiers réels)</span>
             </a>
         </div>
-    </div>
+    </section>
     
-    <!-- Contenu principal -->
-    <main role="main">
-        <!-- Section d'upload -->
+    <!-- ================================================================
+         CONTENU PRINCIPAL
+         Zone principale de l'application
+         ================================================================ -->
+    <main role="main" id="main-content">
+        
+        <!-- ============================================================
+             SECTION D'UPLOAD
+             Zone de glisser-déposer et sélection de fichiers
+             ============================================================ -->
         <section class="upload-section" aria-labelledby="upload-title">
             <h2 id="upload-title" class="section-title">Uploader vos Fichiers</h2>
             
-            <!-- Zone de dépôt -->
-            <div class="drop-zone" id="dropZone">
+            <!-- Zone de dépôt (Drop Zone) -->
+            <div class="drop-zone" 
+                 id="dropZone" 
+                 role="button"
+                 tabindex="0"
+                 aria-label="Zone de dépôt de fichiers. Cliquez ou glissez-déposez vos fichiers ici.">
                 <div class="drop-content">
-                    <div class="upload-icon">📁</div>
+                    <!-- Icône animée -->
+                    <div class="upload-icon" aria-hidden="true">📁</div>
+                    
+                    <!-- Titre de la zone -->
                     <h3>Déposez vos fichiers ici</h3>
                     <p>ou cliquez pour sélectionner</p>
-                    <input type="file" id="fileInput" multiple accept="*/*" class="file-input">
-                    <label for="fileInput" class="btn btn-primary">Parcourir les fichiers</label>
-                    <p class="upload-hint">Maximum 10 fichiers • 50MB par fichier</p>
+                    
+                    <!-- Input file caché -->
+                    <input type="file" 
+                           id="fileInput" 
+                           multiple 
+                           accept="*/*" 
+                           class="file-input"
+                           aria-label="Sélectionner des fichiers">
+                    
+                    <!-- Bouton visible pour sélectionner -->
+                    <label for="fileInput" class="btn btn-primary">
+                        Parcourir les fichiers
+                    </label>
+                    
+                    <!-- Indication des limites -->
+                    <p class="upload-hint">
+                        Maximum <strong>500</strong> fichiers • 
+                        <strong>2 Go</strong> par fichier • 
+                        <strong>10 Go</strong> total
+                    </p>
                 </div>
             </div>
             
-            <!-- Progression -->
-            <div class="upload-progress" id="uploadProgress" style="display: none;">
-                <div class="progress-bar">
+            <!-- Barre de progression (masquée par défaut) -->
+            <div class="upload-progress" id="uploadProgress" aria-live="polite" aria-atomic="true">
+                <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
-                <p class="progress-text" id="progressText">Préparation de l'upload...</p>
+                <p class="progress-text" id="progressText">Préparation du traitement...</p>
+            </div>
+            
+            <!-- Statistiques en temps réel -->
+            <div class="upload-stats" id="uploadStats" aria-live="polite">
+                <!-- Rempli dynamiquement par JavaScript -->
             </div>
         </section>
         
-        <!-- Section de configuration -->
+        <!-- ============================================================
+             SECTION DE CONFIGURATION
+             Options de nettoyage et gestion des caractères
+             ============================================================ -->
         <section class="config-section" aria-labelledby="config-title">
             <h2 id="config-title" class="section-title">Configuration du Nettoyage</h2>
             
             <div class="config-grid">
-                <!-- Caractères à remplacer -->
-                <div class="config-card">
-                    <h3>Caractères à Remplacer par des Espaces</h3>
-                    <div class="info-message" style="margin-bottom: 1rem;">
-                        <strong>⚠️ Note :</strong> Tous les caractères listés ci-dessous seront automatiquement remplacés par des espaces dans les noms de fichiers.
+                <!-- Carte: Caractères à remplacer -->
+                <article class="config-card">
+                    <h3>
+                        <span aria-hidden="true">🔤</span>
+                        Caractères à Remplacer
+                    </h3>
+                    
+                    <div class="info-message">
+                        <strong>ℹ️ Note :</strong> Ces caractères seront remplacés par des espaces dans les noms de fichiers.
                     </div>
+                    
                     <div class="char-list-preview">
-                        <div class="char-scroll" id="charPreview">
-                            <!-- Caractères affichés dynamiquement -->
+                        <div class="char-scroll" id="charPreview" role="list" aria-label="Aperçu des caractères à remplacer">
+                            <!-- Rempli dynamiquement par JavaScript -->
                         </div>
-                        <button id="editCharsBtn" class="btn btn-secondary btn-small">Modifier la liste</button>
+                        <button id="editCharsBtn" 
+                                class="btn btn-secondary btn-small"
+                                aria-haspopup="dialog">
+                            Modifier la liste
+                        </button>
                     </div>
-                </div>
+                </article>
                 
-                <!-- Options de nettoyage -->
-                <div class="config-card">
-                    <h3>Options de Nettoyage</h3>
+                <!-- Carte: Options de nettoyage -->
+                <article class="config-card">
+                    <h3>
+                        <span aria-hidden="true">⚙️</span>
+                        Options de Nettoyage
+                    </h3>
                     
                     <div class="cleaning-options">
-                        <div class="options-group">
-                            <label class="option-checkbox">
-                                <input type="checkbox" id="underscoresOption">
-                                <span class="checkmark"></span>
-                                Remplacer les espaces par des underscores (_)
-                            </label>
-                            <label class="option-checkbox">
-                                <input type="checkbox" id="lowercaseOption">
-                                <span class="checkmark"></span>
-                                Convertir en minuscules
-                            </label>
-                            <label class="option-checkbox">
-                                <input type="checkbox" id="prefixOption">
-                                <span class="checkmark"></span>
-                                Ajouter un préfixe
-                            </label>
-                        </div>
+                        <fieldset>
+                            <legend class="sr-only">Options de transformation des noms</legend>
+                            
+                            <div class="options-group">
+                                <!-- Option: Underscores -->
+                                <label class="option-checkbox">
+                                    <input type="checkbox" id="underscoresOption">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span>Remplacer les espaces par des underscores (_)</span>
+                                </label>
+                                
+                                <!-- Option: Minuscules -->
+                                <label class="option-checkbox">
+                                    <input type="checkbox" id="lowercaseOption">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span>Convertir en minuscules</span>
+                                </label>
+                                
+                                <!-- Option: Préfixe -->
+                                <label class="option-checkbox">
+                                    <input type="checkbox" id="prefixOption">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span>Ajouter un préfixe</span>
+                                </label>
+                            </div>
+                        </fieldset>
                         
-                        <div class="prefix-input" id="prefixInputContainer" style="display: none; margin-top: 1rem;">
-                            <input type="text" id="prefixText" placeholder="clean_" class="option-input" style="width: 100%;">
+                        <!-- Champ préfixe (conditionnel) -->
+                        <div class="prefix-input" id="prefixInputContainer" style="display: none;">
+                            <label for="prefixText" class="sr-only">Préfixe à ajouter</label>
+                            <input type="text" 
+                                   id="prefixText" 
+                                   placeholder="clean_" 
+                                   class="option-input"
+                                   aria-describedby="prefixHelp">
+                            <small id="prefixHelp" class="sr-only">Ce préfixe sera ajouté au début de chaque nom de fichier</small>
                         </div>
                     </div>
-                </div>
+                </article>
             </div>
         </section>
         
-        <!-- Section des fichiers uploadés -->
+        <!-- ============================================================
+             SECTION DES FICHIERS
+             Liste des fichiers uploadés et actions
+             ============================================================ -->
         <section class="files-section" aria-labelledby="files-title">
             <h2 id="files-title" class="section-title">Fichiers à Traiter</h2>
             
-            <div class="files-container" id="filesContainer">
+            <!-- Conteneur de la liste des fichiers -->
+            <div class="files-container" 
+                 id="filesContainer" 
+                 role="list"
+                 aria-live="polite"
+                 aria-label="Liste des fichiers uploadés">
                 <p class="empty-message">Aucun fichier uploadé</p>
             </div>
             
-            <!-- Actions globales -->
-            <div class="global-actions">
-                <button id="cleanAllBtn" class="btn btn-success" disabled>
-                    <span class="btn-icon">✨</span> Nettoyer tous les noms
+            <!-- Boutons d'actions globales -->
+            <div class="global-actions" role="group" aria-label="Actions sur tous les fichiers">
+                <button id="cleanAllBtn" 
+                        class="btn btn-success" 
+                        disabled
+                        aria-disabled="true">
+                    <span class="btn-icon" aria-hidden="true">✨</span>
+                    <span>Nettoyer tous les noms</span>
                 </button>
-                <button id="downloadAllBtn" class="btn btn-primary" disabled>
-                    <span class="btn-icon">⬇️</span> Télécharger tout
+                
+                <button id="downloadAllBtn" 
+                        class="btn btn-primary" 
+                        disabled
+                        aria-disabled="true">
+                    <span class="btn-icon" aria-hidden="true">⬇️</span>
+                    <span>Télécharger tout</span>
                 </button>
-                <button id="clearAllBtn" class="btn btn-secondary">
-                    <span class="btn-icon">🗑️</span> Tout effacer
+                
+                <button id="clearAllBtn" 
+                        class="btn btn-secondary"
+                        disabled
+                        aria-disabled="true">
+                    <span class="btn-icon" aria-hidden="true">🗑️</span>
+                    <span>Tout effacer</span>
                 </button>
             </div>
         </section>
         
-        <!-- Note de sécurité -->
-        <div class="security-note" role="note">
-            <div class="security-icon">🔒</div>
+        <!-- ============================================================
+             NOTE DE SÉCURITÉ
+             Information sur la confidentialité
+             ============================================================ -->
+        <aside class="security-note" role="note" aria-labelledby="security-title">
+            <div class="security-icon" aria-hidden="true">🔒</div>
             <div class="security-content">
-                <h4>Vos fichiers sont en sécurité</h4>
-                <p>Tous les traitements sont effectués localement dans votre navigateur. 
-                Aucun fichier n'est envoyé à nos serveurs. Ils sont supprimés de la mémoire 
-                lorsque vous quittez la page.</p>
+                <h3 id="security-title">Vos fichiers sont en sécurité</h3>
+                <p>
+                    Tous les traitements sont effectués <strong>localement dans votre navigateur</strong>. 
+                    Aucun fichier n'est envoyé à nos serveurs. 
+                    Les fichiers sont supprimés de la mémoire lorsque vous quittez la page.
+                </p>
             </div>
-        </div>
+        </aside>
         
-        <!-- Navigation entre pages -->
-        <div class="page-navigation">
+        <!-- ============================================================
+             NAVIGATION ENTRE PAGES
+             Lien vers la page précédente
+             ============================================================ -->
+        <nav class="page-navigation" aria-label="Navigation entre les pages">
             <a href="index.html" class="nav-prev">
-                <span class="nav-icon">←</span>
+                <span class="nav-icon" aria-hidden="true">←</span>
                 <div>
-                    <div style="font-size: 0.875rem; color: #6c757d;">Page précédente</div>
-                    <div>Mode Texte</div>
+                    <span class="nav-label">Page précédente</span>
+                    <span class="nav-page">Mode Texte</span>
                 </div>
             </a>
-        </div>
+        </nav>
     </main>
     
-    <!-- Modal pour éditer les caractères -->
-    <div class="modal" id="charModal" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+    <!-- ================================================================
+         MODAL D'ÉDITION DES CARACTÈRES
+         Fenêtre modale accessible pour modifier la liste
+         ================================================================ -->
+    <div class="modal" 
+         id="charModal" 
+         role="dialog" 
+         aria-labelledby="modalTitle" 
+         aria-modal="true"
+         aria-hidden="true">
         <div class="modal-content">
+            <!-- En-tête du modal -->
             <div class="modal-header">
                 <h3 id="modalTitle">Caractères à Remplacer par des Espaces</h3>
-                <button class="modal-close" aria-label="Fermer">×</button>
+                <button class="modal-close" 
+                        aria-label="Fermer la fenêtre"
+                        type="button">×</button>
             </div>
+            
+            <!-- Corps du modal -->
             <div class="modal-body">
                 <div class="char-list-editor">
-                    <div class="char-list-display" id="charListDisplay">
-                        <!-- Liste des caractères éditables -->
+                    <!-- Affichage des caractères actuels -->
+                    <div class="char-list-display" 
+                         id="charListDisplay"
+                         role="list"
+                         aria-label="Liste des caractères à remplacer">
+                        <!-- Rempli dynamiquement par JavaScript -->
                     </div>
                     
+                    <!-- Formulaire d'ajout -->
                     <div class="char-add-section">
-                        <h4>Ajouter des caractères :</h4>
+                        <h4>Ajouter des caractères</h4>
                         <div class="char-add-form">
-                            <input type="text" id="newCharInput" placeholder="Tapez ou collez des caractères" maxlength="50">
-                            <div class="char-counter">
+                            <label for="newCharInput" class="sr-only">Nouveaux caractères à ajouter</label>
+                            <input type="text" 
+                                   id="newCharInput" 
+                                   placeholder="Tapez ou collez des caractères" 
+                                   maxlength="50"
+                                   autocomplete="off">
+                            <div class="char-counter" aria-live="polite">
                                 <span id="charCount">0</span> caractère(s) détecté(s)
                             </div>
-                            <button id="addCharBtn" class="btn btn-secondary">Ajouter les caractères</button>
+                            <button id="addCharBtn" class="btn btn-secondary" type="button">
+                                Ajouter
+                            </button>
                         </div>
                     </div>
                     
+                    <!-- Présélections rapides -->
                     <div class="preset-chars">
-                        <h4>Présélections rapides :</h4>
-                        <div class="preset-buttons">
-                            <button class="preset-btn" data-chars="☺♥♦♣♠♪♫☼►◄">Émoticônes</button>
-                            <button class="preset-btn" data-chars="\\/:*?\"<>|#">Spéciaux</button>
-                            <button class="preset-btn" data-chars=",;.!?()[]{}@&">Ponctuation</button>
-                            <button class="preset-btn" data-chars="  \t\n">Espaces</button>
+                        <h4>Présélections rapides</h4>
+                        <div class="preset-buttons" role="group" aria-label="Groupes de caractères prédéfinis">
+                            <button class="preset-btn" type="button" data-chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ">
+                                Majuscules (A-Z)
+                            </button>
+                            <button class="preset-btn" type="button" data-chars="abcdefghijklmnopqrstuvwxyz">
+                                Minuscules (a-z)
+                            </button>
+                            <button class="preset-btn" type="button" data-chars="0123456789">
+                                Chiffres (0-9)
+                            </button>
+                            <button class="preset-btn" type="button" data-chars="☺☻♥♦♣♠•◘○◙♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼★☆✰✦✧℃▎✿❀❁❤➤➥➦">
+                                Émoticônes
+                            </button>
+                            <button class="preset-btn" type="button" data-chars="\/:*?&quot;&lt;&gt;|#">
+                                Spéciaux
+                            </button>
+                            <button class="preset-btn" type="button" data-chars=",;.!?()[]{}@&amp;">
+                                Ponctuation
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            <!-- Pied du modal -->
             <div class="modal-footer">
-                <button id="resetCharsBtn" class="btn btn-secondary">Réinitialiser</button>
-                <button id="saveCharsBtn" class="btn btn-primary">Enregistrer</button>
+                <button id="resetCharsBtn" class="btn btn-secondary" type="button">
+                    Réinitialiser
+                </button>
+                <button id="saveCharsBtn" class="btn btn-primary" type="button">
+                    Enregistrer
+                </button>
             </div>
+        </div>
+
+        <!-- ============================================================
+             MODAL ARCHIVAGE - Options pour créer une archive
+             ============================================================ -->
+        <div id="archiveModal" class="modal" role="dialog" aria-labelledby="archive-title" aria-hidden="true">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <!-- En-tête du modal -->
+                <div class="modal-header">
+                    <h2 id="archive-title">📦 Options d'Archivage</h2>
+                    <button class="modal-close" type="button" aria-label="Fermer">×</button>
+                </div>
+
+                <!-- Corps du modal -->
+                <div class="modal-body">
+                    <!-- Niveau de compression -->
+                    <div class="form-group">
+                        <label for="compressionLevel">Niveau de Compression</label>
+                        <select id="compressionLevel" class="form-control">
+                            <option value="0">Aucune (Plus rapide)</option>
+                            <option value="1">Faible</option>
+                            <option value="5" selected>Moyen</option>
+                            <option value="9">Maximum (Plus lent)</option>
+                        </select>
+                        <small>Compression plus élevée = fichier plus petit mais plus lent à créer</small>
+                    </div>
+
+                    <!-- Mot de passe -->
+                    <div class="form-group">
+                        <label for="usePassword">
+                            <input type="checkbox" id="usePassword" class="form-checkbox">
+                            Protéger par mot de passe
+                        </label>
+                        <input type="password" id="archivePassword" class="form-control" placeholder="Entrez un mot de passe" disabled>
+                        <small>⚠️ Note: Le mot de passe ne fonctionne que pour ZIP (non supporté en HTML5 natif)</small>
+                    </div>
+
+                    <!-- Split d'archives -->
+                    <div class="form-group">
+                        <label for="enableSplit">
+                            <input type="checkbox" id="enableSplit" class="form-checkbox">
+                            Diviser l'archive (pour fichiers volumineux)
+                        </label>
+                        <div id="splitOptions" style="display: none; margin-top: 10px;">
+                            <label for="splitSize">Taille par partie (Mo)</label>
+                            <input type="number" id="splitSize" class="form-control" value="500" min="100" max="2000">
+                            <small>Archive sera divisée en plusieurs fichiers si elle dépasse cette taille</small>
+                        </div>
+                    </div>
+
+                    <!-- Format d'archive -->
+                    <div class="form-group">
+                        <label for="archiveFormat">Format d'Archive</label>
+                        <select id="archiveFormat" class="form-control">
+                            <option value="zip" selected>ZIP (Recommandé - Compatible avec tous les systèmes)</option>
+                            <option value="7z" disabled>7Z (Meilleure compression - Nécessite 7-Zip sur votre machine)</option>
+                            <option value="rar" disabled>RAR (Format propriétaire - Nécessite WinRAR sur votre machine)</option>
+                        </select>
+                        <small>✅ ZIP est créé côté client (aucun serveur requis)</small>
+                    </div>
+
+                    <!-- Informations additionnelles et option serveur -->
+                    <div id="formatInfo" style="display:none; margin-top:10px;" aria-live="polite">
+                        <div id="formatDetails" class="format-details"></div>
+                        <div id="softwareLinks" class="format-links" style="margin-top:6px;"></div>
+                        <p style="margin-top:8px; font-size:0.9rem; color:#666;"><strong>Note :</strong> Pour créer des archives 7Z ou RAR, utilisez 7-Zip ou WinRAR sur votre machine locale.</p>
+                    </div>
+
+                    <!-- Historique des archives -->
+                    <div class="form-group">
+                        <h4>Historique des Archives Créées</h4>
+                        <div id="archiveHistory" class="archive-history-list">
+                            <p class="empty-message">Aucune archive créée encore</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pied du modal -->
+                <div class="modal-footer">
+                    <button id="cancelArchiveBtn" class="btn btn-secondary" type="button">
+                        Annuler
+                    </button>
+                    <button id="createArchiveBtn" class="btn btn-primary" type="button">
+                        Créer l'Archive
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barre de progression pour l'archivage -->
+        <div id="archiveProgress" class="progress-container" style="display: none;">
+            <div class="progress-header">
+                <h3>Création de l'archive en cours...</h3>
+                <div class="progress-stats">
+                    <span id="progressArchivePercent">0%</span>
+                    <span id="progressArchiveFile">Fichier 1/10</span>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div id="progressArchiveFill" class="progress-fill"></div>
+            </div>
+            <p id="progressArchiveText" class="progress-text">Initialisation...</p>
         </div>
     </div>
     
-    <!-- Navigation de pied de page -->
+    <!-- ================================================================
+         PIED DE PAGE
+         Navigation et informations légales
+         ================================================================ -->
     <footer class="footer-nav" role="contentinfo">
         <div class="footer-nav-content">
+            <!-- Section Navigation -->
             <div class="footer-section">
                 <h4>Navigation</h4>
                 <ul class="footer-links">
-                    <li><a href="index.html"><span class="footer-icon">🏠</span> Accueil</a></li>
-                    <li><a href="upload.html"><span class="footer-icon">📁</span> Upload Fichiers</a></li>
+                    <li>
+                        <a href="index.html">
+                            <span class="footer-icon" aria-hidden="true">🏠</span>
+                            Accueil
+                        </a>
+                    </li>
+                    <li>
+                        <a href="upload.html" aria-current="page">
+                            <span class="footer-icon" aria-hidden="true">📁</span>
+                            Upload Fichiers
+                        </a>
+                    </li>
                 </ul>
             </div>
             
+            <!-- Section Fonctionnalités -->
             <div class="footer-section">
                 <h4>Fonctionnalités</h4>
                 <ul class="footer-links">
-                    <li><a href="index.html#clean-title"><span class="footer-icon">✨</span> Nettoyage Texte</a></li>
-                    <li><a href="upload.html"><span class="footer-icon">⬆️</span> Upload Fichiers</a></li>
-                    <li><a href="index.html#chars-title"><span class="footer-icon">⚙️</span> Configuration</a></li>
+                    <li>
+                        <a href="index.html#clean-title">
+                            <span class="footer-icon" aria-hidden="true">✨</span>
+                            Nettoyage Texte
+                        </a>
+                    </li>
+                    <li>
+                        <a href="upload.html">
+                            <span class="footer-icon" aria-hidden="true">⬆️</span>
+                            Upload Fichiers
+                        </a>
+                    </li>
+                    <li>
+                        <a href="index.html#chars-title">
+                            <span class="footer-icon" aria-hidden="true">⚙️</span>
+                            Configuration
+                        </a>
+                    </li>
                 </ul>
             </div>
             
+            <!-- Section À propos -->
             <div class="footer-section">
                 <h4>À propos</h4>
-                <p style="color: #6c757d; line-height: 1.6;">
+                <p>
                     Outil de nettoyage de noms de fichiers développé avec l'Architecture 777.
                     <br>Traitement 100% local et sécurisé.
                 </p>
             </div>
         </div>
         
-        <div class="footer-content" style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e9ecef;">
-            <p>Nettoyeur de Fichiers &copy; 2025 | Architecture 777</p>
+        <!-- Copyright -->
+        <div class="footer-bottom">
+            <p>Nettoyeur de Fichiers © 2025 | Architecture 777</p>
             <p class="footer-info">Conçu pour éliminer les caractères invalides des noms de fichiers</p>
-            <p>PS: Je tiens à remercier MIG pour ce projet, sans toutes ces nombreuses erreurs de téléchargements pas de site WEB. 🤣😉 </p>
+            <p>PS: Je tiens à remercier MIG pour ce projet, sans toutes ces nombreuses erreurs de téléchargements pas de site WEB. 🤣😉</p>
         </div>
     </footer>
     
-    <!-- JavaScript -->
+    <!-- ================================================================
+         SCRIPTS JAVASCRIPT
+         Chargement différé pour les performances
+         ================================================================ -->
+    <!-- ZIP natif (aucune dépendance externe) -->
     <script src="assets/js/upload.js" defer></script>
-    
-    <!-- Script pour la navigation mobile -->
-    <script>
-        // Navigation mobile
-        document.addEventListener('DOMContentLoaded', function() {
-            const navToggle = document.querySelector('.nav-toggle');
-            const navLinks = document.querySelector('.nav-links');
-            
-            if (navToggle) {
-                navToggle.addEventListener('click', function() {
-                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                    this.setAttribute('aria-expanded', !isExpanded);
-                    navLinks.classList.toggle('active');
-                    
-                    // Changer l'icône du toggle
-                    this.innerHTML = navLinks.classList.contains('active') ? '✕' : '☰';
-                });
-                
-                // Fermer le menu en cliquant sur un lien
-                navLinks.querySelectorAll('a').forEach(link => {
-                    link.addEventListener('click', () => {
-                        navLinks.classList.remove('active');
-                        navToggle.setAttribute('aria-expanded', 'false');
-                        navToggle.innerHTML = '☰';
-                    });
-                });
-                
-                // Fermer le menu en cliquant en dehors
-                document.addEventListener('click', function(event) {
-                    if (!event.target.closest('.nav-container') && 
-                        navLinks.classList.contains('active')) {
-                        navLinks.classList.remove('active');
-                        navToggle.setAttribute('aria-expanded', 'false');
-                        navToggle.innerHTML = '☰';
-                    }
-                });
-            }
-            
-            // Marquer la page active dans la navigation
-            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-            const navLinksAll = document.querySelectorAll('.nav-link');
-            
-            navLinksAll.forEach(link => {
-                const href = link.getAttribute('href');
-                if (href === currentPage || 
-                    (currentPage === '' && href === 'index.html') ||
-                    (currentPage === 'upload.html' && href === 'upload.html')) {
-                    link.classList.add('active');
-                } else {
-                    link.classList.remove('active');
-                }
-            });
-            
-            // Gestion de l'option préfixe
-            const prefixOption = document.getElementById('prefixOption');
-            const prefixInputContainer = document.getElementById('prefixInputContainer');
-            
-            if (prefixOption && prefixInputContainer) {
-                prefixOption.addEventListener('change', function() {
-                    if (this.checked) {
-                        prefixInputContainer.style.display = 'block';
-                    } else {
-                        prefixInputContainer.style.display = 'none';
-                    }
-                });
-            }
-            
-            // Compteur de caractères dans le modal
-            const newCharInput = document.getElementById('newCharInput');
-            const charCountElement = document.getElementById('charCount');
-            
-            if (newCharInput && charCountElement) {
-                newCharInput.addEventListener('input', function() {
-                    const text = this.value;
-                    const uniqueChars = new Set();
-                    
-                    for (let char of text) {
-                        uniqueChars.add(char);
-                    }
-                    
-                    const count = uniqueChars.size;
-                    charCountElement.textContent = count;
-                    
-                    // Changer la couleur en fonction du nombre
-                    if (count === 0) {
-                        charCountElement.style.color = '#6c757d';
-                    } else if (count <= 10) {
-                        charCountElement.style.color = '#28a745';
-                    } else {
-                        charCountElement.style.color = '#dc3545';
-                    }
-                });
-            }
-        });
-    </script>
+
+    <!-- Modal intrusive pour logiciel manquant (7-Zip / WinRAR) -->
+    <div id="missingSoftwareModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
+        <div class="modal-content" role="document" style="max-width:560px;">
+            <div class="modal-header">
+                <h3>Logiciel manquant</h3>
+                <button class="modal-close" aria-label="Fermer" type="button">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="missingModalText">Le serveur n'a pas trouvé l'outil nécessaire pour créer l'archive demandée.</p>
+                <p>Tu peux installer 7‑Zip (recommandé) ou WinRAR.</p>
+                <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;">
+                    <a id="missingInstall7z" class="btn btn-primary" href="assets/help/install-7zip-windows.html" target="_blank" rel="noopener">Installer 7‑Zip (instructions)</a>
+                    <a id="missingInstallWinRar" class="btn btn-secondary" href="https://www.win-rar.com/" target="_blank" rel="noopener">Télécharger WinRAR</a>
+                    <button id="missingTestNow" class="btn btn-info" type="button">Tester maintenant</button>
+                    <button id="missingDismiss" class="btn btn-small btn-link" type="button">Ignorer</button>
+                    <div id="missingTestResult" style="margin-left:8px;color:#333; font-size:0.95rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

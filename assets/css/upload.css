@@ -1,12 +1,16 @@
 /* ==========================================================================
    Fichier: upload.css
-   Description: Styles spécifiques pour la page d'upload de fichiers
+   Description: Styles pour l'upload de fichiers - Limites Pro
+   Limites: 2 Go/fichier - 10 Go total - 500 fichiers
    Architecture: 777
    ========================================================================== */
 
 /* ==========================================================================
-   Navigation principale
+   SECTION 1 : NAVIGATION PRINCIPALE
+   Barre de navigation sticky avec logo et liens
    ========================================================================== */
+
+/* --- Conteneur de navigation --- */
 .main-nav {
     background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
     padding: 1rem 0;
@@ -16,6 +20,7 @@
     z-index: 1000;
 }
 
+/* --- Container interne de la nav --- */
 .nav-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -25,6 +30,7 @@
     align-items: center;
 }
 
+/* --- Logo avec icône --- */
 .nav-logo {
     color: white;
     font-size: 1.5rem;
@@ -35,16 +41,19 @@
     gap: 0.5rem;
 }
 
-.nav-logo::before {
+/* --- Icône éclair avant le logo --- */
+/* .nav-logo::before {
     content: "⚡";
     font-size: 1.2rem;
-}
+} */
 
+/* --- Conteneur des liens --- */
 .nav-links {
     display: flex;
     gap: 1.5rem;
 }
 
+/* --- Style des liens individuels --- */
 .nav-link {
     color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
@@ -54,24 +63,30 @@
     font-weight: 500;
 }
 
+/* --- Effet hover sur les liens --- */
 .nav-link:hover {
     background: rgba(255, 255, 255, 0.1);
     color: white;
 }
 
+/* --- Lien actif --- */
 .nav-link.active {
     background: rgba(255, 255, 255, 0.2);
     color: white;
 }
 
 /* ==========================================================================
-   Section d'upload
+   SECTION 2 : ZONE D'UPLOAD (DROP ZONE)
+   Zone de glisser-déposer pour les fichiers
    ========================================================================== */
+
+/* --- Section conteneur de l'upload --- */
 .upload-section {
-    max-width: 800px;
+    max-width: 900px;
     margin: 2rem auto 3rem;
 }
 
+/* --- Titre de section --- */
 .section-title {
     color: #2575fc;
     margin-bottom: 1.5rem;
@@ -79,7 +94,7 @@
     text-align: center;
 }
 
-/* Zone de dépôt */
+/* --- Zone de dépôt principale --- */
 .drop-zone {
     border: 3px dashed #6a11cb;
     border-radius: 16px;
@@ -92,116 +107,333 @@
     overflow: hidden;
 }
 
+/* --- Effet hover sur la zone --- */
 .drop-zone:hover {
     border-color: #2575fc;
     background: linear-gradient(135deg, #f0f2ff 0%, #e8ebff 100%);
     transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(37, 117, 252, 0.15);
 }
 
+/* --- État quand un fichier est glissé au-dessus --- */
 .drop-zone.drag-over {
     border-color: #28a745;
     background: linear-gradient(135deg, #e8f5e9 0%, #d4edda 100%);
     animation: pulse 1.5s infinite;
+    transform: scale(1.02);
 }
 
+/* --- Contenu de la zone (non cliquable) --- */
 .drop-content {
     pointer-events: none;
 }
 
+/* --- Input file caché --- */
 .file-input {
     display: none;
 }
 
+/* --- Icône d'upload animée --- */
 .drop-zone .upload-icon {
     font-size: 4rem;
     margin-bottom: 1rem;
     animation: float 3s ease-in-out infinite;
 }
 
+/* --- Titre de la zone --- */
 .drop-zone h3 {
     color: #495057;
     margin-bottom: 0.5rem;
     font-size: 1.5rem;
 }
 
+/* --- Description de la zone --- */
 .drop-zone p {
     color: #6c757d;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
-.drop-zone .btn-primary {
+/* --- Bouton parcourir (cliquable) --- */
+.drop-zone .btn-primary,
+.drop-zone label[for="fileInput"] {
     pointer-events: auto;
+    cursor: pointer;
 }
 
+/* --- Indice sur les limites --- */
 .upload-hint {
     font-size: 0.875rem;
     color: #868e96;
     margin-top: 1rem;
 }
 
-/* Barre de progression */
+/* --- Mise en valeur des limites --- */
+.upload-hint strong {
+    color: #2575fc;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   SECTION 3 : INFORMATIONS DE CAPACITÉ
+   Badges et indicateurs des limites système
+   ========================================================================== */
+
+/* --- Conteneur des badges de capacité --- */
+.capacity-badges {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+/* --- Badge individuel de capacité --- */
+.capacity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #495057;
+    transition: all 0.3s ease;
+}
+
+/* --- Icône du badge --- */
+.capacity-badge .badge-icon {
+    font-size: 1.1rem;
+}
+
+/* --- Valeur mise en évidence --- */
+.capacity-badge .badge-value {
+    color: #2575fc;
+    font-weight: 700;
+}
+
+/* --- Effet hover sur les badges --- */
+.capacity-badge:hover {
+    border-color: #2575fc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 117, 252, 0.15);
+}
+
+/* --- Badge spécial pour la limite max --- */
+.capacity-badge.warning {
+    border-color: #ffc107;
+    background: #fffbeb;
+}
+
+.capacity-badge.warning .badge-value {
+    color: #d97706;
+}
+
+/* ==========================================================================
+   SECTION 4 : BARRE DE PROGRESSION
+   Indicateur visuel de l'état de l'upload
+   ========================================================================== */
+
+/* --- Conteneur de la progression --- */
 .upload-progress {
     margin-top: 2rem;
     padding: 1.5rem;
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    display: none;
 }
 
+/* --- Affichage actif de la progression --- */
+.upload-progress.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+/* --- Barre de fond --- */
 .progress-bar {
-    height: 10px;
+    height: 12px;
     background: #e9ecef;
-    border-radius: 5px;
+    border-radius: 6px;
     overflow: hidden;
     margin-bottom: 1rem;
+    position: relative;
 }
 
+/* --- Remplissage de la barre --- */
 .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
     width: 0%;
     transition: width 0.3s ease;
-    border-radius: 5px;
+    border-radius: 6px;
+    position: relative;
 }
 
+/* --- Effet de brillance animé --- */
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+/* --- Texte de progression --- */
 .progress-text {
     text-align: center;
     color: #495057;
     font-weight: 500;
 }
 
+/* --- Détails de progression --- */
+.progress-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+
 /* ==========================================================================
-   Section de configuration
+   SECTION 5 : STATISTIQUES EN TEMPS RÉEL
+   Compteurs et jauges d'utilisation
    ========================================================================== */
+
+/* --- Conteneur des stats --- */
+.upload-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+/* --- Carte de statistique individuelle --- */
+.stat-card {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    border-color: #2575fc;
+    box-shadow: 0 4px 12px rgba(37, 117, 252, 0.1);
+}
+
+/* --- Icône de la stat --- */
+.stat-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* --- Valeur de la stat --- */
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2575fc;
+    margin-bottom: 0.25rem;
+}
+
+/* --- Label de la stat --- */
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --- Jauge de progression --- */
+.stat-gauge {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.stat-gauge-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #2575fc);
+    transition: width 0.3s ease;
+}
+
+/* --- Couleurs selon le niveau --- */
+.stat-gauge-fill.warning {
+    background: linear-gradient(90deg, #ffc107, #fd7e14);
+}
+
+.stat-gauge-fill.danger {
+    background: linear-gradient(90deg, #fd7e14, #dc3545);
+}
+
+/* ==========================================================================
+   SECTION 6 : CONFIGURATION ET OPTIONS
+   Cartes de paramétrage du nettoyage
+   ========================================================================== */
+
+/* --- Section de configuration --- */
 .config-section {
     max-width: 1200px;
     margin: 0 auto 3rem;
 }
 
+/* --- Grille de configuration --- */
 .config-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 2rem;
 }
 
+/* --- Carte de configuration --- */
 .config-card {
     background: white;
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
 }
 
+.config-card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+/* --- Titre de carte --- */
 .config-card h3 {
     color: #495057;
     margin-bottom: 1rem;
     font-size: 1.125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-/* Aperçu des caractères */
+/* --- Aperçu des caractères --- */
 .char-list-preview {
     margin-top: 1rem;
 }
 
+/* --- Zone de scroll pour les caractères --- */
 .char-scroll {
     max-height: 120px;
     overflow-y: auto;
@@ -215,6 +447,7 @@
     gap: 0.5rem;
 }
 
+/* --- Caractère individuel --- */
 .char-scroll span {
     display: inline-block;
     padding: 0.5rem 0.75rem;
@@ -224,20 +457,28 @@
     font-size: 1.125rem;
     min-width: 40px;
     text-align: center;
+    transition: all 0.2s ease;
 }
 
+.char-scroll span:hover {
+    border-color: #2575fc;
+    background: #f0f7ff;
+}
+
+/* --- Bouton petit --- */
 .btn-small {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
 }
 
-/* Options de configuration */
+/* --- Groupe d'options --- */
 .option-group {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
+/* --- Label d'option --- */
 .option-label {
     display: flex;
     align-items: center;
@@ -254,12 +495,15 @@
     background: #f8f9fa;
 }
 
+/* --- Checkbox d'option --- */
 .option-label input[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
+    accent-color: #2575fc;
 }
 
+/* --- Champ de saisie d'option --- */
 .option-input {
     margin-top: 0.5rem;
     padding: 0.75rem;
@@ -267,6 +511,7 @@
     border-radius: 8px;
     font-size: 0.95rem;
     transition: all 0.3s ease;
+    width: 100%;
 }
 
 .option-input:disabled {
@@ -282,22 +527,29 @@
 }
 
 /* ==========================================================================
-   Section des fichiers
+   SECTION 7 : LISTE DES FICHIERS
+   Affichage des fichiers uploadés
    ========================================================================== */
+
+/* --- Section des fichiers --- */
 .files-section {
     max-width: 1200px;
     margin: 0 auto 3rem;
 }
 
+/* --- Conteneur des fichiers --- */
 .files-container {
     min-height: 200px;
+    max-height: 600px;
+    overflow-y: auto;
     background: #f8f9fa;
     border-radius: 12px;
-    padding: 2rem;
+    padding: 1.5rem;
     margin-bottom: 2rem;
     border: 2px dashed #dee2e6;
 }
 
+/* --- Message si vide --- */
 .empty-message {
     text-align: center;
     color: #868e96;
@@ -305,7 +557,34 @@
     padding: 3rem 0;
 }
 
-/* Cartes de fichiers */
+/* --- Compteur de fichiers --- */
+.files-counter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.files-counter-text {
+    font-weight: 600;
+    color: #495057;
+}
+
+.files-counter-value {
+    color: #2575fc;
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   SECTION 8 : CARTES DE FICHIERS
+   Style individuel de chaque fichier
+   ========================================================================== */
+
+/* --- Carte de fichier --- */
 .file-card {
     background: white;
     border-radius: 10px;
@@ -319,17 +598,26 @@
     transition: all 0.3s ease;
 }
 
+/* --- Effet hover --- */
 .file-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border-color: #2575fc;
 }
 
+/* --- Carte en erreur --- */
 .file-card.error {
     border-color: #dc3545;
     background: #fff5f5;
 }
 
+/* --- Carte nettoyée --- */
+.file-card.cleaned {
+    border-color: #28a745;
+    background: #f0fff4;
+}
+
+/* --- Icône du fichier --- */
 .file-icon {
     font-size: 2rem;
     width: 60px;
@@ -342,37 +630,67 @@
     flex-shrink: 0;
 }
 
+/* --- Informations du fichier --- */
 .file-info {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
 }
 
+/* --- Nom du fichier --- */
 .file-name {
     font-weight: 600;
     color: #212529;
     margin-bottom: 0.25rem;
     word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
+/* --- Nom original (barré) --- */
 .file-name.original {
     color: #6c757d;
     text-decoration: line-through;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 400;
 }
 
+/* --- Détails du fichier --- */
 .file-details {
     font-size: 0.875rem;
     color: #868e96;
     display: flex;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
+/* --- Taille du fichier colorée --- */
+.file-size {
+    font-weight: 500;
+}
+
+.file-size.large {
+    color: #fd7e14;
+}
+
+.file-size.very-large {
+    color: #dc3545;
+}
+
+/* ==========================================================================
+   SECTION 9 : BOUTONS D'ACTION
+   Styles des boutons de la liste de fichiers
+   ========================================================================== */
+
+/* --- Conteneur des actions --- */
 .file-actions {
     display: flex;
     gap: 0.5rem;
     flex-shrink: 0;
+    flex-wrap: wrap;
 }
 
+/* --- Bouton d'action --- */
 .action-btn {
     padding: 0.5rem 1rem;
     border: none;
@@ -386,34 +704,64 @@
     gap: 0.5rem;
 }
 
+/* --- Bouton nettoyer --- */
 .action-btn.clean {
     background: #28a745;
     color: white;
 }
 
+.action-btn.clean:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+/* --- Bouton télécharger --- */
 .action-btn.download {
     background: #2575fc;
     color: white;
 }
 
+.action-btn.download:hover {
+    background: #1a68e8;
+    transform: translateY(-1px);
+}
+
+/* --- Bouton supprimer --- */
 .action-btn.delete {
     background: #dc3545;
     color: white;
 }
 
-.action-btn:hover {
-    opacity: 0.9;
+.action-btn.delete:hover {
+    background: #c82333;
     transform: translateY(-1px);
 }
 
-/* Actions globales */
+/* --- Bouton désactivé --- */
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ==========================================================================
+   SECTION 10 : ACTIONS GLOBALES
+   Boutons d'action pour tous les fichiers
+   ========================================================================== */
+
+/* --- Conteneur des actions globales --- */
 .global-actions {
     display: flex;
     justify-content: center;
     gap: 1rem;
     flex-wrap: wrap;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin-top: 1rem;
 }
 
+/* --- Boutons globaux --- */
 .global-actions .btn {
     min-width: 200px;
     display: flex;
@@ -421,16 +769,66 @@
     justify-content: center;
     gap: 0.75rem;
     padding: 1rem 2rem;
-    font-size: 1.125rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
 }
 
+/* --- Icône du bouton --- */
 .btn-icon {
     font-size: 1.25rem;
 }
 
+/* --- Bouton principal --- */
+.btn-primary {
+    background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(37, 117, 252, 0.4);
+}
+
+/* --- Bouton succès --- */
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+}
+
+/* --- Bouton secondaire --- */
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+/* --- Bouton désactivé --- */
+.global-actions .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
 /* ==========================================================================
-   Note de sécurité
+   SECTION 11 : NOTE DE SÉCURITÉ
+   Message de confidentialité
    ========================================================================== */
+
+/* --- Conteneur de la note --- */
 .security-note {
     max-width: 800px;
     margin: 3rem auto;
@@ -443,11 +841,13 @@
     gap: 1.5rem;
 }
 
+/* --- Icône de sécurité --- */
 .security-icon {
     font-size: 2.5rem;
     flex-shrink: 0;
 }
 
+/* --- Contenu de la note --- */
 .security-content h4 {
     color: #155724;
     margin-bottom: 0.5rem;
@@ -457,11 +857,15 @@
 .security-content p {
     color: #0c5460;
     line-height: 1.6;
+    margin: 0;
 }
 
 /* ==========================================================================
-   Modal
+   SECTION 12 : MODAL D'ÉDITION
+   Fenêtre modale pour éditer les caractères
    ========================================================================== */
+
+/* --- Overlay du modal --- */
 .modal {
     display: none;
     position: fixed;
@@ -474,13 +878,16 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
+    backdrop-filter: blur(4px);
 }
 
+/* --- Modal affiché --- */
 .modal.show {
     display: flex;
     animation: fadeIn 0.3s ease;
 }
 
+/* --- Contenu du modal --- */
 .modal-content {
     background: white;
     border-radius: 16px;
@@ -491,8 +898,10 @@
     display: flex;
     flex-direction: column;
     animation: slideUp 0.3s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
+/* --- En-tête du modal --- */
 .modal-header {
     padding: 1.5rem;
     background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
@@ -507,6 +916,7 @@
     font-size: 1.25rem;
 }
 
+/* --- Bouton fermer --- */
 .modal-close {
     background: none;
     border: none;
@@ -515,8 +925,8 @@
     cursor: pointer;
     line-height: 1;
     padding: 0;
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -528,18 +938,31 @@
     background: rgba(255, 255, 255, 0.2);
 }
 
+/* --- Corps du modal --- */
 .modal-body {
     padding: 2rem;
     flex: 1;
     overflow-y: auto;
 }
 
+/* --- Pied du modal --- */
+.modal-footer {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* --- Éditeur de caractères --- */
 .char-list-editor {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
 }
 
+/* --- Affichage des caractères --- */
 .char-list-display {
     display: flex;
     flex-wrap: wrap;
@@ -552,6 +975,7 @@
     overflow-y: auto;
 }
 
+/* --- Item de caractère --- */
 .char-item {
     display: flex;
     align-items: center;
@@ -560,14 +984,21 @@
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
     border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
 }
 
+.char-item:hover {
+    border-color: #dc3545;
+}
+
+/* --- Texte du caractère --- */
 .char-text {
     font-size: 1.125rem;
     min-width: 30px;
     text-align: center;
 }
 
+/* --- Bouton supprimer caractère --- */
 .char-remove {
     background: #dc3545;
     color: white;
@@ -581,25 +1012,40 @@
     justify-content: center;
     font-size: 0.75rem;
     line-height: 1;
+    transition: all 0.2s ease;
 }
 
+.char-remove:hover {
+    background: #c82333;
+    transform: scale(1.1);
+}
+
+/* --- Formulaire d'ajout --- */
 .char-add-form {
     display: flex;
     gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .char-add-form input {
     flex: 1;
+    min-width: 200px;
     padding: 0.75rem;
     border: 2px solid #e9ecef;
     border-radius: 8px;
-    font-size: 1.125rem;
-    text-align: center;
+    font-size: 1rem;
 }
 
+.char-add-form input:focus {
+    border-color: #2575fc;
+    outline: none;
+}
+
+/* --- Présélections --- */
 .preset-chars h4 {
     color: #495057;
     margin-bottom: 0.75rem;
+    font-size: 0.95rem;
 }
 
 .preset-buttons {
@@ -624,37 +1070,40 @@
     transform: translateY(-1px);
 }
 
-.modal-footer {
-    padding: 1.5rem;
-    background: #f8f9fa;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    border-top: 1px solid #e9ecef;
-}
-
 /* ==========================================================================
-   Animations
+   SECTION 13 : ANIMATIONS
+   Keyframes et effets animés
    ========================================================================== */
+
+/* --- Flottement de l'icône --- */
 @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-10px); }
 }
 
+/* --- Pulsation de la zone --- */
 @keyframes pulse {
-    0%, 100% { border-color: #6a11cb; }
-    50% { border-color: #28a745; }
+    0%, 100% { 
+        border-color: #6a11cb;
+        box-shadow: 0 0 0 0 rgba(106, 17, 203, 0.4);
+    }
+    50% { 
+        border-color: #28a745;
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
 }
 
+/* --- Apparition en fondu --- */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
 }
 
+/* --- Glissement vers le haut --- */
 @keyframes slideUp {
     from { 
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(30px);
     }
     to { 
         opacity: 1;
@@ -662,32 +1111,130 @@
     }
 }
 
+/* --- Effet de brillance --- */
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* --- Pulsation du logo --- */
+@keyframes logoPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* --- Pulsation du badge --- */
+@keyframes badgePulse {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
+    }
+    50% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 0 8px rgba(255, 107, 107, 0);
+    }
+}
+
+/* --- Apparition des cartes --- */
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* --- Animation d'entrée pour les fichiers --- */
+.file-card {
+    animation: cardAppear 0.3s ease-out;
+}
+
 /* ==========================================================================
-   Responsive
+   SECTION 14 : RESPONSIVE DESIGN
+   Adaptations pour mobiles et tablettes
    ========================================================================== */
-@media (max-width: 768px) {
-    .nav-container {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .nav-links {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .drop-zone {
-        padding: 2rem 1rem;
-    }
-    
+
+/* --- Tablettes (max 992px) --- */
+@media (max-width: 992px) {
     .config-grid {
         grid-template-columns: 1fr;
     }
     
+    .upload-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .capacity-badges {
+        gap: 0.75rem;
+    }
+}
+
+/* --- Mobiles (max 768px) --- */
+@media (max-width: 768px) {
+    /* Navigation */
+    .nav-toggle {
+        display: block;
+    }
+    
+    .nav-links {
+        position: fixed;
+        top: 70px;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
+        flex-direction: column;
+        padding: 1rem;
+        gap: 0.5rem;
+        transform: translateY(-100%);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        z-index: 999;
+    }
+    
+    .nav-links.active {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .nav-link {
+        width: 100%;
+        justify-content: center;
+        padding: 1rem;
+    }
+    
+    /* Zone d'upload */
+    .drop-zone {
+        padding: 2rem 1rem;
+    }
+    
+    .drop-zone .upload-icon {
+        font-size: 3rem;
+    }
+    
+    .drop-zone h3 {
+        font-size: 1.25rem;
+    }
+    
+    /* Stats */
+    .upload-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Cartes de fichiers */
     .file-card {
         flex-direction: column;
         align-items: stretch;
         text-align: center;
+    }
+    
+    .file-icon {
+        margin: 0 auto;
     }
     
     .file-actions {
@@ -695,26 +1242,346 @@
         margin-top: 1rem;
     }
     
+    /* Actions globales */
+    .global-actions {
+        flex-direction: column;
+    }
+    
     .global-actions .btn {
         min-width: 100%;
     }
     
+    /* Note de sécurité */
     .security-note {
         flex-direction: column;
         text-align: center;
     }
+    
+    /* Badges de capacité */
+    .capacity-badges {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .capacity-badge {
+        width: 100%;
+        max-width: 250px;
+        justify-content: center;
+    }
 }
 
+/* --- Petits mobiles (max 480px) --- */
 @media (max-width: 480px) {
+    /* Modal */
     .modal-content {
         margin: 10px;
+        max-height: 95vh;
     }
     
     .modal-body {
         padding: 1rem;
     }
     
+    .modal-header {
+        padding: 1rem;
+    }
+    
+    .modal-header h3 {
+        font-size: 1rem;
+    }
+    
+    /* Formulaire d'ajout */
     .char-add-form {
         flex-direction: column;
     }
+    
+    .char-add-form input {
+        min-width: 100%;
+    }
+    
+    /* Boutons */
+    .action-btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    .action-btn span:first-child {
+        display: none;
+    }
+    
+    /* Section titre */
+    .section-title {
+        font-size: 1.4rem;
+    }
+    
+    /* Header */
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
 }
+
+/* ==========================================================================
+   SECTION 15 : UTILITAIRES
+   Classes d'aide et modifications rapides
+   ========================================================================== */
+
+/* --- Masquer visuellement --- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* --- Texte tronqué --- */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- Centrage flex --- */
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Espacement --- */
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+
+/* --- Message d'info stylé --- */
+.info-message {
+    background: #e7f3ff;
+    border-left: 4px solid #2575fc;
+    padding: 1rem;
+    border-radius: 6px;
+    color: #0d47a1;
+    font-size: 0.95rem;
+}
+
+.info-message strong {
+    color: #1565c0;
+}
+
+/* --- Message d'avertissement --- */
+.warning-message {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 1rem;
+    border-radius: 6px;
+    color: #856404;
+}
+
+/* --- Message d'erreur --- */
+.error-message {
+    background: #f8d7da;
+    border-left: 4px solid #dc3545;
+    padding: 1rem;
+    border-radius: 6px;
+    color: #721c24;
+}
+
+/* --- Message de succès --- */
+.success-message {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 1rem;
+    border-radius: 6px;
+    color: #155724;
+}
+
+/* ==========================================================================
+   SECTION 13 : STYLES D'ARCHIVAGE
+   Styles pour le modal et l'historique des archives
+   ========================================================================== */
+
+/* --- Conteneur du formulaire --- */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 0.25rem;
+    color: #666;
+    font-size: 0.85rem;
+}
+
+/* --- Sélecteurs et inputs --- */
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #2575fc;
+    box-shadow: 0 0 0 3px rgba(37, 117, 252, 0.1);
+}
+
+.form-checkbox {
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+/* --- Historique des archives --- */
+.archive-history-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.history-items {
+    display: flex;
+    flex-direction: column;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-item:hover {
+    background: #f9f9f9;
+}
+
+.history-info {
+    flex: 1;
+}
+
+.history-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.history-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.history-download {
+    background: #2575fc;
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.history-download:hover {
+    background: #1a5dd8;
+}
+
+/* --- Barre de progression pour l'archivage --- */
+#archiveProgress {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 1.5rem;
+    min-width: 300px;
+    max-width: 400px;
+    z-index: 9998;
+}
+
+.progress-header {
+    margin-bottom: 1rem;
+}
+
+.progress-header h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2575fc, #6a11cb);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* --- Informations sur les formats --- */
+#formatInfo a {
+    color: #2575fc;
+    text-decoration: none;
+    font-weight: 600;
+    margin: 0 0.5rem;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+#formatInfo a:hover {
+    color: #6a11cb;
+    text-decoration: underline;
+}
+
+#softwareLinks {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(37, 117, 252, 0.2);
+}
+
+/* ==========================================================================
+   FIN DU FICHIER UPLOAD.CSS
+   ========================================================================== */

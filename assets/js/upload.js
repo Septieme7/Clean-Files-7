@@ -1,182 +1,342 @@
 /**
+ * ==========================================================================
  * Fichier: upload.js
- * Description: Gestion de l'upload et du nettoyage de fichiers réels
+ * Description: Gestion de l'upload et du nettoyage de fichiers
+ * Limites: 2 Go/fichier - 10 Go total - 500 fichiers
  * Architecture: 777
- * Auteur: 777 Tools
+ * ==========================================================================
  */
 
 // ============================================================================
-// CONFIGURATION ET ÉTAT
+// SECTION 1 : CONFIGURATION DE L'APPLICATION
+// Définition des constantes et limites du système
 // ============================================================================
 
 /**
- * Configuration de l'application
+ * Configuration globale de l'application
+ * Limites augmentées pour usage professionnel
  */
 const CONFIG = {
-    maxFiles: 10,
-    maxFileSize: 50 * 1024 * 1024, // 50MB
-    allowedTypes: '*/*'
+    // --- Limites de fichiers ---
+    maxFiles: 500,                              // Nombre maximum de fichiers
+    maxFileSize: 2 * 1024 * 1024 * 1024,       // 2 Go par fichier (en octets)
+    maxTotalSize: 10 * 1024 * 1024 * 1024,     // 10 Go total (en octets)
+    
+    // --- Types de fichiers ---
+    allowedTypes: '*/*',                        // Tous types acceptés
+    
+    // --- Interface utilisateur ---
+    chunkSize: 1024 * 1024,                    // 1 Mo pour le traitement par chunks
+    notificationDuration: 3000,                 // Durée des notifications (ms)
+    
+    // --- Messages ---
+    messages: {
+        maxFilesReached: 'Limite atteinte : maximum 500 fichiers autorisés.',
+        maxSizeReached: 'Limite atteinte : taille totale maximum de 10 Go.',
+        fileTooLarge: 'Fichier trop volumineux : maximum 2 Go par fichier.',
+        noFiles: 'Aucun fichier à traiter.',
+        uploadSuccess: 'Fichier(s) ajouté(s) avec succès.',
+        cleanSuccess: 'Nom(s) de fichier(s) nettoyé(s).',
+        downloadStarted: 'Téléchargement démarré.',
+        fileRemoved: 'Fichier supprimé.',
+        allCleared: 'Tous les fichiers ont été supprimés.'
+    }
 };
 
+// ============================================================================
+// SECTION 2 : ÉTAT DE L'APPLICATION
+// Variables globales et gestion de l'état
+// ============================================================================
+
 /**
- * État de l'application
+ * État global de l'application
+ * Stocke les fichiers, options et caractères invalides
  */
 let state = {
-    files: [], // Tableau d'objets fichiers
+    // --- Liste des fichiers uploadés ---
+    files: [],
+    
+    // --- Taille totale actuelle (en octets) ---
+    totalSize: 0,
+    
+    // --- Caractères invalides à remplacer par des espaces ---
     invalidChars: new Set([
+        // Émoticônes et symboles
         '☺', '☻', '♥', '♦', '♣', '♠', '•', '◘', '○', '◙', '♂', '♀', '♪', '♫', '☼',
         '►', '◄', '↕', '‼', '¶', '§', '▬', '↨', '↑', '↓', '→', '←', '∟', '↔', '▲', '▼',
-        '★', '☆', '✰', '✦', '✧', '❄', '❆', '❖', '✿', '❀', '❁', '❤', '➤', '➥', '➦',
+        '★', '☆', '✰', '✦', '✧', '℃', '←', '▎', '✿', '❀', '❁', '❤', '➤', '➥', '➦',
+        
+        // Caractères spéciaux problématiques pour les systèmes de fichiers
         '\\', '/', ':', '*', '?', '"', '<', '>', '|', '#', '²', '~', '`', '´',
+        
+        // Ponctuation et symboles
         ',', ';', '!', '(', ')', '[', ']', '{', '}', '@', '&', '$', '%', '^',
         '+', '=', '§', '°', '¨', '£', '€', '¥',
+        
+        // Caractères de contrôle
         '\t', '\n', '\r'
     ]),
+    
+    // --- Options de nettoyage ---
     options: {
-        useUnderscores: false,  // Remplacer les espaces par des underscores
-        toLowercase: false,      // Convertir en minuscules
-        usePrefix: false,        // Ajouter un préfixe
-        prefix: 'clean_'
+        useUnderscores: false,  // Remplacer espaces par underscores
+        toLowercase: false,     // Convertir en minuscules
+        usePrefix: false,       // Ajouter un préfixe
+        prefix: 'clean_'        // Préfixe par défaut
     }
 };
 
 // ============================================================================
-// INITIALISATION
+// SECTION 3 : INITIALISATION
+// Démarrage de l'application et configuration des événements
 // ============================================================================
 
 /**
- * Initialise l'application quand le DOM est chargé
+ * Initialise l'application au chargement du DOM
+ * Configure tous les écouteurs d'événements nécessaires
  */
 function init() {
-    console.log('Initialisation de l\'application upload...');
-    setupEventListeners();
+    console.log('🚀 Initialisation de l\'application upload...');
+    console.log(`📊 Limites: ${CONFIG.maxFiles} fichiers, ${formatFileSize(CONFIG.maxFileSize)}/fichier, ${formatFileSize(CONFIG.maxTotalSize)} total`);
+    
+    // Configuration des écouteurs
+    setupDropZone();
+    setupFileInput();
+    setupOptions();
+    setupActions();
+    setupModal();
+    setupArchiveModal();
+    
+    // Chargement des données sauvegardées
+    loadSavedData();
+    loadArchiveHistory();
+    
+    // Mise à jour de l'interface
     updateCharPreview();
-    loadOptions();
     updateUI();
+    updateStats();
     
-    // Vérifier que les éléments DOM existent
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const filesContainer = document.getElementById('filesContainer');
-    
-    if (!dropZone) console.error('dropZone non trouvé');
-    if (!fileInput) console.error('fileInput non trouvé');
-    if (!filesContainer) console.error('filesContainer non trouvé');
-    
-    console.log('Application upload initialisée');
+    console.log('✅ Application initialisée avec succès');
 }
 
 /**
- * Configure tous les écouteurs d'événements
+ * Configure la zone de glisser-déposer
  */
-function setupEventListeners() {
-    console.log('Configuration des écouteurs d\'événements...');
-    
-    // Upload de fichiers
-    const fileInput = document.getElementById('fileInput');
+function setupDropZone() {
     const dropZone = document.getElementById('dropZone');
-    
-    if (fileInput) {
-        fileInput.addEventListener('change', handleFileSelect);
-        console.log('Écouteur fileInput configuré');
-    } else {
-        console.error('fileInput non trouvé pour l\'écouteur');
-    }
-    
-    if (dropZone) {
-        // Drag and drop
-        dropZone.addEventListener('dragover', handleDragOver);
-        dropZone.addEventListener('dragleave', handleDragLeave);
-        dropZone.addEventListener('drop', handleDrop);
-        
-        // Click sur la zone (ne pas déclencher l'input directement)
-        dropZone.addEventListener('click', (e) => {
-            // Empêcher le déclenchement multiple
-            e.stopPropagation();
-            if (fileInput) {
-                fileInput.click();
-            }
-        });
-        
-        console.log('Écouteurs dropZone configurés');
-    } else {
-        console.error('dropZone non trouvé pour les écouteurs');
-    }
-    
-    // Options de configuration
-    setupOptionListeners();
-    
-    // Boutons d'action
-    setupActionListeners();
-    
-    // Modal
-    setupModalListeners();
-    
-    // Gestion du préfixe
-    setupPrefixListener();
-    
-    // Écouteur pour le bouton "Parcourir les fichiers"
-    const browseBtn = dropZone?.querySelector('label[for="fileInput"]');
-    if (browseBtn) {
-        browseBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (fileInput) {
-                fileInput.click();
-            }
-        });
-    }
-}
-
-// ============================================================================
-// GESTION DES FICHIERS (CORRIGÉE)
-// ============================================================================
-
-/**
- * Gère la sélection de fichiers via l'input
- */
-function handleFileSelect(event) {
-    console.log('handleFileSelect appelé');
-    
-    if (!event || !event.target) {
-        console.error('Événement file select invalide');
+    if (!dropZone) {
+        console.error('❌ Element dropZone non trouvé');
         return;
     }
     
-    const files = event.target.files;
-    console.log('Fichiers sélectionnés:', files.length, 'fichier(s)');
+    // Événements de drag & drop
+    dropZone.addEventListener('dragover', handleDragOver);
+    dropZone.addEventListener('dragleave', handleDragLeave);
+    dropZone.addEventListener('drop', handleDrop);
     
-    if (!files || files.length === 0) {
-        console.log('Aucun fichier sélectionné');
-        return;
-    }
+    // Clic sur la zone
+    dropZone.addEventListener('click', (e) => {
+        // Éviter les clics multiples
+        if (e.target.tagName === 'LABEL' || e.target.tagName === 'BUTTON') return;
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) fileInput.click();
+    });
     
-    // Convertir FileList en tableau
-    const filesArray = Array.from(files);
-    processFiles(filesArray);
-    
-    // NE PAS réinitialiser l'input ici - laisser l'utilisateur pouvoir ré-ouvrir
-    // le sélecteur de fichiers sans perdre la sélection
+    console.log('📦 Zone de dépôt configurée');
 }
 
 /**
- * Gère le drag and drop (dragover)
+ * Configure l'input de fichiers
+ */
+function setupFileInput() {
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput) {
+        console.error('❌ Element fileInput non trouvé');
+        return;
+    }
+    
+    fileInput.addEventListener('change', handleFileSelect);
+    console.log('📁 Input fichier configuré');
+}
+
+/**
+ * Configure les options de nettoyage
+ */
+function setupOptions() {
+    // Option underscores
+    const underscoresOption = document.getElementById('underscoresOption');
+    if (underscoresOption) {
+        underscoresOption.addEventListener('change', (e) => {
+            state.options.useUnderscores = e.target.checked;
+            saveData();
+            reprocessCleanedFiles();
+        });
+    }
+    
+    // Option minuscules
+    const lowercaseOption = document.getElementById('lowercaseOption');
+    if (lowercaseOption) {
+        lowercaseOption.addEventListener('change', (e) => {
+            state.options.toLowercase = e.target.checked;
+            saveData();
+            reprocessCleanedFiles();
+        });
+    }
+    
+    // Option préfixe (checkbox)
+    const prefixOption = document.getElementById('prefixOption');
+    const prefixInputContainer = document.getElementById('prefixInputContainer');
+    if (prefixOption) {
+        prefixOption.addEventListener('change', (e) => {
+            state.options.usePrefix = e.target.checked;
+            if (prefixInputContainer) {
+                prefixInputContainer.style.display = e.target.checked ? 'block' : 'none';
+            }
+            saveData();
+            reprocessCleanedFiles();
+        });
+    }
+    
+    // Option préfixe (texte)
+    const prefixText = document.getElementById('prefixText');
+    if (prefixText) {
+        prefixText.addEventListener('input', (e) => {
+            state.options.prefix = e.target.value || 'clean_';
+            saveData();
+            reprocessCleanedFiles();
+        });
+    }
+    
+    console.log('⚙️ Options configurées');
+}
+
+/**
+ * Configure les boutons d'action globaux
+ */
+function setupActions() {
+    // Bouton nettoyer tous
+    const cleanAllBtn = document.getElementById('cleanAllBtn');
+    if (cleanAllBtn) {
+        cleanAllBtn.addEventListener('click', cleanAllFiles);
+    }
+    
+    // Bouton télécharger tous
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+    if (downloadAllBtn) {
+        downloadAllBtn.addEventListener('click', openArchiveModal);
+    }
+    
+    // Bouton tout effacer
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', clearAllFiles);
+    }
+    
+    console.log('🎯 Actions configurées');
+}
+
+/**
+ * Configure le modal d'édition des caractères
+ */
+function setupModal() {
+    // Bouton ouvrir le modal
+    const editBtn = document.getElementById('editCharsBtn');
+    if (editBtn) {
+        editBtn.addEventListener('click', openCharModal);
+    }
+    
+    // Bouton fermer le modal
+    const modal = document.getElementById('charModal');
+    if (modal) {
+        const closeBtn = modal.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeCharModal);
+        }
+        
+        // Fermer en cliquant à l'extérieur
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeCharModal();
+        });
+        
+        // Fermer avec Échap
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                closeCharModal();
+            }
+        });
+    }
+    
+    // Bouton ajouter caractères
+    const addCharBtn = document.getElementById('addCharBtn');
+    if (addCharBtn) {
+        addCharBtn.addEventListener('click', addCharsFromModal);
+    }
+    
+    // Input de nouveaux caractères
+    const newCharInput = document.getElementById('newCharInput');
+    if (newCharInput) {
+        newCharInput.addEventListener('input', updateCharCounter);
+        newCharInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addCharsFromModal();
+        });
+    }
+    
+    // Bouton réinitialiser
+    const resetCharsBtn = document.getElementById('resetCharsBtn');
+    if (resetCharsBtn) {
+        resetCharsBtn.addEventListener('click', resetChars);
+    }
+    
+    // Bouton sauvegarder
+    const saveCharsBtn = document.getElementById('saveCharsBtn');
+    if (saveCharsBtn) {
+        saveCharsBtn.addEventListener('click', () => {
+            saveData();
+            closeCharModal();
+            reprocessCleanedFiles();
+            updateFileList();
+            showNotification('Caractères enregistrés - Noms réactualisés', 'success');
+        });
+    }
+    
+    // Boutons de présélection
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const chars = e.target.dataset.chars;
+            if (chars) applyPreset(chars);
+        });
+    });
+    
+    console.log('📝 Modal configuré');
+}
+
+// ============================================================================
+// SECTION 4 : GESTION DU DRAG & DROP
+// Événements de glisser-déposer des fichiers
+// ============================================================================
+
+/**
+ * Gère l'événement dragover (fichier au-dessus de la zone)
+ * @param {DragEvent} event - Événement de drag
  */
 function handleDragOver(event) {
     event.preventDefault();
     event.stopPropagation();
+    
     const dropZone = document.getElementById('dropZone');
-    if (dropZone) {
+    if (dropZone && !dropZone.classList.contains('drag-over')) {
         dropZone.classList.add('drag-over');
     }
 }
 
 /**
- * Gère le drag and drop (dragleave)
+ * Gère l'événement dragleave (fichier quitte la zone)
+ * @param {DragEvent} event - Événement de drag
  */
 function handleDragLeave(event) {
     event.preventDefault();
     event.stopPropagation();
+    
     const dropZone = document.getElementById('dropZone');
     if (dropZone) {
         dropZone.classList.remove('drag-over');
@@ -184,7 +344,8 @@ function handleDragLeave(event) {
 }
 
 /**
- * Gère le drag and drop (drop)
+ * Gère l'événement drop (fichier déposé)
+ * @param {DragEvent} event - Événement de drop
  */
 function handleDrop(event) {
     event.preventDefault();
@@ -196,203 +357,180 @@ function handleDrop(event) {
     }
     
     const files = event.dataTransfer?.files;
-    if (!files || files.length === 0) {
-        return;
+    if (files && files.length > 0) {
+        console.log(`📥 ${files.length} fichier(s) déposé(s)`);
+        processFiles(Array.from(files));
     }
-    
-    console.log('Fichiers déposés:', files.length, 'fichier(s)');
-    const filesArray = Array.from(files);
-    processFiles(filesArray);
 }
 
+// ============================================================================
+// SECTION 5 : GESTION DE LA SÉLECTION DE FICHIERS
+// Traitement des fichiers sélectionnés via l'input
+// ============================================================================
+
 /**
- * Traite les fichiers uploadés (version corrigée)
+ * Gère la sélection de fichiers via l'input
+ * @param {Event} event - Événement change de l'input
  */
-function processFiles(files) {
-    console.log('processFiles appelé avec', files.length, 'fichier(s)');
-    
-    if (!files || !Array.isArray(files) || files.length === 0) {
-        console.log('Aucun fichier à traiter');
-        return;
+function handleFileSelect(event) {
+    const files = event.target?.files;
+    if (files && files.length > 0) {
+        console.log(`📁 ${files.length} fichier(s) sélectionné(s)`);
+        processFiles(Array.from(files));
     }
     
-    // Vérifier le nombre de fichiers
-    const totalFiles = state.files.length + files.length;
-    if (totalFiles > CONFIG.maxFiles) {
-        showNotification(`Maximum ${CONFIG.maxFiles} fichiers autorisés. Vous avez déjà ${state.files.length} fichier(s).`, 'error');
+    // Réinitialiser l'input pour permettre de re-sélectionner les mêmes fichiers
+    event.target.value = '';
+}
+
+// ============================================================================
+// SECTION 6 : TRAITEMENT DES FICHIERS
+// Validation et ajout des fichiers à l'état
+// ============================================================================
+
+/**
+ * Traite un tableau de fichiers
+ * Valide les limites et ajoute les fichiers valides
+ * @param {File[]} files - Tableau de fichiers à traiter
+ */
+function processFiles(files) {
+    if (!files || files.length === 0) {
+        console.log('⚠️ Aucun fichier à traiter');
         return;
     }
     
     let addedCount = 0;
-    let errorCount = 0;
+    let skippedCount = 0;
+    let errors = [];
     
-    // Traiter chaque fichier
-    files.forEach(file => {
-        // Vérifier si le fichier est valide
-        if (!file || !file.name) {
-            errorCount++;
-            return;
+    // Afficher la progression pour les gros volumes
+    const showProgress = files.length > 10;
+    if (showProgress) {
+        showProgressBar();
+    }
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Mettre à jour la progression
+        if (showProgress) {
+            updateProgressBar((i / files.length) * 100, `Traitement: ${i + 1}/${files.length}`);
         }
         
-        // Vérifier la taille
+        // Vérification 1: Nombre maximum de fichiers
+        if (state.files.length >= CONFIG.maxFiles) {
+            errors.push(`Limite de ${CONFIG.maxFiles} fichiers atteinte`);
+            skippedCount += files.length - i;
+            break;
+        }
+        
+        // Vérification 2: Taille du fichier individuel
         if (file.size > CONFIG.maxFileSize) {
-            showNotification(
-                `${file.name} dépasse la taille maximale (50MB)`,
-                'error'
-            );
-            errorCount++;
-            return;
+            errors.push(`${file.name}: dépasse 2 Go`);
+            skippedCount++;
+            continue;
         }
         
-        // Vérifier si le fichier existe déjà (par nom)
-        const existingFile = state.files.find(f => 
+        // Vérification 3: Taille totale
+        if (state.totalSize + file.size > CONFIG.maxTotalSize) {
+            errors.push(`Limite de 10 Go totale atteinte`);
+            skippedCount += files.length - i;
+            break;
+        }
+        
+        // Vérification 4: Doublon (même nom et taille)
+        const isDuplicate = state.files.some(f => 
             f.originalName === file.name && 
-            f.size === formatFileSize(file.size)
+            f.originalFile.size === file.size
         );
         
-        if (existingFile) {
-            showNotification(`${file.name} est déjà dans la liste`, 'warning');
-            return;
+        if (isDuplicate) {
+            skippedCount++;
+            continue;
         }
         
-        // Créer un objet fichier
+        // Créer l'objet fichier
         const fileObj = {
             id: generateId(),
             originalFile: file,
             originalName: file.name,
             cleanedName: null,
-            size: formatFileSize(file.size),
+            size: file.size,
+            formattedSize: formatFileSize(file.size),
             type: getFileType(file),
             icon: getFileIcon(file),
-            error: null,
             cleaned: false,
-            uploaded: new Date().toISOString()
+            addedAt: Date.now()
         };
         
         // Ajouter à l'état
         state.files.push(fileObj);
+        state.totalSize += file.size;
         addedCount++;
-        
-        console.log('Fichier ajouté:', file.name, 'ID:', fileObj.id);
-    });
+    }
+    
+    // Masquer la progression
+    if (showProgress) {
+        hideProgressBar();
+    }
     
     // Mettre à jour l'interface
     updateFileList();
     updateUI();
+    updateStats();
     
-    // Afficher une notification
+    // Notifications
     if (addedCount > 0) {
-        showNotification(
-            `${addedCount} fichier(s) ajouté(s) avec succès${errorCount > 0 ? `, ${errorCount} erreur(s)` : ''}`,
-            'success'
-        );
-    } else if (errorCount > 0) {
-        showNotification(`${errorCount} erreur(s) lors de l'ajout des fichiers`, 'error');
-    } else {
-        showNotification('Aucun nouveau fichier ajouté', 'info');
+        showNotification(`${addedCount} fichier(s) ajouté(s)`, 'success');
     }
-}
-
-/**
- * Génère un ID unique pour un fichier
- */
-function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
-/**
- * Formate la taille d'un fichier
- */
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
     
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    if (errors.length > 0) {
+        // Afficher les premières erreurs seulement
+        const displayErrors = errors.slice(0, 3);
+        if (errors.length > 3) {
+            displayErrors.push(`... et ${errors.length - 3} autre(s) erreur(s)`);
+        }
+        showNotification(displayErrors.join('\n'), 'warning');
+    }
     
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-/**
- * Détermine le type de fichier
- */
-function getFileType(file) {
-    if (!file || !file.type) return 'unknown';
-    
-    const type = file.type.split('/')[0];
-    return type || 'unknown';
-}
-
-/**
- * Retourne l'icône appropriée pour le type de fichier
- */
-function getFileIcon(file) {
-    const type = getFileType(file);
-    const extension = getFileExtension(file.name);
-    
-    const icons = {
-        image: '🖼️',
-        audio: '🎵',
-        video: '🎬',
-        text: '📄',
-        pdf: '📕',
-        archive: '📦',
-        spreadsheet: '📊',
-        presentation: '📽️',
-        code: '💻',
-        default: '📁'
-    };
-    
-    // Vérifier l'extension d'abord
-    if (['pdf'].includes(extension)) return icons.pdf;
-    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) return icons.archive;
-    if (['xls', 'xlsx', 'csv'].includes(extension)) return icons.spreadsheet;
-    if (['ppt', 'pptx'].includes(extension)) return icons.presentation;
-    if (['js', 'html', 'css', 'py', 'java', 'cpp'].includes(extension)) return icons.code;
-    
-    // Sinon par type MIME
-    return icons[type] || icons.default;
-}
-
-/**
- * Extrait l'extension d'un fichier
- */
-function getFileExtension(filename) {
-    if (!filename) return '';
-    const parts = filename.split('.');
-    return parts.length > 1 ? parts.pop().toLowerCase() : '';
+    console.log(`✅ Traitement terminé: ${addedCount} ajoutés, ${skippedCount} ignorés`);
 }
 
 // ============================================================================
-// NETTOYAGE DES NOMS DE FICHIERS
+// SECTION 7 : NETTOYAGE DES NOMS DE FICHIERS
+// Algorithme de remplacement des caractères invalides
 // ============================================================================
 
 /**
- * Nettoie un nom de fichier en remplaçant les caractères invalides par des espaces
+ * Nettoie un nom de fichier en remplaçant les caractères invalides
+ * @param {string} filename - Nom de fichier original
+ * @returns {string} Nom de fichier nettoyé
  */
 function cleanFileName(filename) {
-    if (!filename) return '';
+    if (!filename || typeof filename !== 'string') {
+        return 'fichier_sans_nom';
+    }
     
     // Séparer le nom et l'extension
-    const lastDot = filename.lastIndexOf('.');
+    const lastDotIndex = filename.lastIndexOf('.');
     let name = filename;
     let extension = '';
     
-    if (lastDot > 0) {
-        name = filename.substring(0, lastDot);
-        extension = filename.substring(lastDot);
+    if (lastDotIndex > 0) {
+        name = filename.substring(0, lastDotIndex);
+        extension = filename.substring(lastDotIndex);
     }
     
     let cleanedName = name;
     
     // Remplacer chaque caractère invalide par un espace
     state.invalidChars.forEach(char => {
-        const escaped = char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(escaped, 'g');
+        const escapedChar = char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escapedChar, 'g');
         cleanedName = cleanedName.replace(regex, ' ');
     });
     
-    // Nettoyer les espaces multiples et les espaces en début/fin
+    // Nettoyer les espaces multiples et trim
     cleanedName = cleanedName.replace(/\s+/g, ' ').trim();
     
     // Appliquer les options
@@ -408,8 +546,8 @@ function cleanFileName(filename) {
         cleanedName = state.options.prefix + cleanedName;
     }
     
-    // Si le nom est vide après nettoyage
-    if (!cleanedName) {
+    // Nom par défaut si vide
+    if (!cleanedName || cleanedName.trim() === '') {
         cleanedName = 'fichier';
     }
     
@@ -417,32 +555,30 @@ function cleanFileName(filename) {
 }
 
 /**
- * Nettoie un fichier spécifique
+ * Nettoie un fichier spécifique par son ID
+ * @param {string} fileId - ID du fichier à nettoyer
  */
 function cleanFile(fileId) {
-    const fileIndex = state.files.findIndex(f => f.id === fileId);
-    if (fileIndex === -1) {
-        console.error('Fichier non trouvé avec ID:', fileId);
+    const file = state.files.find(f => f.id === fileId);
+    if (!file) {
+        console.error('❌ Fichier non trouvé:', fileId);
         return;
     }
     
-    const file = state.files[fileIndex];
     file.cleanedName = cleanFileName(file.originalName);
     file.cleaned = true;
     
-    // Mettre à jour l'affichage
     updateFileItem(fileId);
     updateUI();
-    
     showNotification('Fichier nettoyé', 'success');
 }
 
 /**
- * Nettoie tous les fichiers
+ * Nettoie tous les fichiers non encore nettoyés
  */
 function cleanAllFiles() {
     if (state.files.length === 0) {
-        showNotification('Aucun fichier à nettoyer', 'warning');
+        showNotification(CONFIG.messages.noFiles, 'warning');
         return;
     }
     
@@ -466,14 +602,29 @@ function cleanAllFiles() {
     }
 }
 
+/**
+ * Re-traite les fichiers déjà nettoyés (après changement d'options)
+ */
+function reprocessCleanedFiles() {
+    state.files.forEach(file => {
+        if (file.cleaned) {
+            file.cleanedName = cleanFileName(file.originalName);
+        }
+    });
+    
+    updateFileList();
+}
+
 // ============================================================================
-// TÉLÉCHARGEMENT
+// SECTION 8 : TÉLÉCHARGEMENT DES FICHIERS
+// Gestion du téléchargement individuel et par lots
 // ============================================================================
 
 /**
- * Télécharge un fichier spécifique
+ * Télécharge un fichier spécifique par son ID
+ * @param {string} fileId - ID du fichier à télécharger
  */
-async function downloadFile(fileId) {
+function downloadFile(fileId) {
     const fileObj = state.files.find(f => f.id === fileId);
     if (!fileObj) {
         showNotification('Fichier non trouvé', 'error');
@@ -481,120 +632,1005 @@ async function downloadFile(fileId) {
     }
     
     try {
-        // Créer un lien de téléchargement
         const url = URL.createObjectURL(fileObj.originalFile);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileObj.cleanedName || fileObj.originalName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileObj.cleanedName || fileObj.originalName;
+        link.style.display = 'none';
         
-        // Libérer l'URL
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Libérer l'URL après un court délai
         setTimeout(() => URL.revokeObjectURL(url), 100);
         
-        showNotification('Téléchargement démarré', 'success');
+        showNotification(CONFIG.messages.downloadStarted, 'success');
     } catch (error) {
-        console.error('Erreur de téléchargement:', error);
+        console.error('❌ Erreur de téléchargement:', error);
         showNotification('Erreur lors du téléchargement', 'error');
     }
 }
 
 /**
- * Télécharge tous les fichiers
+ * Télécharge tous les fichiers nettoyés
+ * Utilise un délai entre chaque téléchargement pour éviter les blocages
  */
 async function downloadAllFiles() {
-    if (state.files.length === 0) {
-        showNotification('Aucun fichier à télécharger', 'warning');
-        return;
-    }
-    
     const cleanedFiles = state.files.filter(f => f.cleaned);
     
     if (cleanedFiles.length === 0) {
-        showNotification('Veuillez d\'abord nettoyer les fichiers', 'warning');
+        showNotification('Aucun fichier nettoyé à télécharger', 'warning');
         return;
     }
     
-    try {
-        // Pour chaque fichier, télécharger avec un délai
-        for (let i = 0; i < cleanedFiles.length; i++) {
-            const file = cleanedFiles[i];
-            await downloadFileWithDelay(file.id, i * 300);
-        }
-        
-        showNotification(`${cleanedFiles.length} téléchargement(s) démarré(s)`, 'success');
-    } catch (error) {
-        console.error('Erreur:', error);
-        showNotification('Erreur lors du téléchargement', 'error');
+    showNotification(`Démarrage du téléchargement de ${cleanedFiles.length} fichier(s)...`, 'info');
+    
+    // Télécharger avec un délai de 300ms entre chaque fichier
+    for (let i = 0; i < cleanedFiles.length; i++) {
+        await new Promise(resolve => {
+            setTimeout(() => {
+                downloadFile(cleanedFiles[i].id);
+                resolve();
+            }, i * 300);
+        });
+    }
+}
+
+// ============================================================================
+// SECTION 8.5 : ARCHIVAGE DES FICHIERS
+// Gestion des archives ZIP avec options avancées
+// ============================================================================
+
+/**
+ * État global pour l'archivage
+ */
+let archiveState = {
+    history: [],
+    maxHistoryItems: 10
+};
+
+/**
+ * Ouvre le modal d'archivage
+ */
+function openArchiveModal() {
+    const cleanedFiles = state.files.filter(f => f.cleaned);
+    
+    if (cleanedFiles.length === 0) {
+        showNotification('Aucun fichier nettoyé à archiver', 'warning');
+        return;
+    }
+    
+    const modal = document.getElementById('archiveModal');
+    if (modal) {
+        updateArchiveHistory();
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
     }
 }
 
 /**
- * Télécharge un fichier avec délai
+ * Ferme le modal d'archivage
  */
-function downloadFileWithDelay(fileId, delay) {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            downloadFile(fileId);
-            resolve();
-        }, delay);
-    });
+function closeArchiveModal() {
+    const modal = document.getElementById('archiveModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
 }
 
+/**
+ * Met à jour l'historique des archives
+ */
+function updateArchiveHistory() {
+    const historyContainer = document.getElementById('archiveHistory');
+    if (!historyContainer) return;
+    
+    if (archiveState.history.length === 0) {
+        historyContainer.innerHTML = '<p class="empty-message">Aucune archive créée encore</p>';
+        return;
+    }
+    
+    let html = '<div class="history-items">';
+    
+    archiveState.history.forEach((item, index) => {
+        html += `
+            <div class="history-item">
+                <div class="history-info">
+                    <div class="history-name">${escapeHtml(item.name)}</div>
+                    <div class="history-details">
+                        <span>${formatFileSize(item.size)}</span>
+                        <span>${item.filesCount} fichier(s)</span>
+                        <span>${new Date(item.created).toLocaleString('fr-FR')}</span>
+                    </div>
+                </div>
+                <button class="history-download" onclick="downloadArchiveFromHistory(${index})" title="Télécharger">
+                    ⬇️
+                </button>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    historyContainer.innerHTML = html;
+}
+
+/**
+ * Crée une archive ZIP avec les options sélectionnées
+ */
 // ============================================================================
-// GESTION DE L'INTERFACE (CORRIGÉE)
+// ZIP NATIF - Implémentation simple sans dépendance externe
+// Crée des archives ZIP valides en JavaScript pur
 // ============================================================================
 
 /**
- * Met à jour la liste des fichiers (version corrigée)
+ * Crée un CRC32 pour un buffer (pour validation ZIP)
+ */
+function crc32(buf) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < buf.length; i++) {
+        crc = (crc >>> 8) ^ ((crc ^ buf[i]) & 0xFF);
+        for (let j = 0; j < 8; j++) {
+            crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+        }
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+/**
+ * Compresse un buffer avec DEFLATE simple (pseudo-compression)
+ * Utilise une approche simple sans vraie compression
+ */
+function deflateSimple(data) {
+    // Pour la démo, on retourne les données brutes
+    // Une vraie compression prendrait trop d'espace en code
+    // Cette fonction marque juste les données comme "non compressées"
+    return { data, isCompressed: false };
+}
+
+/**
+ * Crée un archive ZIP simple
+ */
+async function createNativeZip(files) {
+    console.log('🔨 Création ZIP natif avec', files.length, 'fichiers');
+    
+    const parts = [];
+    const localHeaders = [];
+    let offset = 0;
+    
+    // 1. Créer chaque entrée (local header + compressed data)
+    for (let i = 0; i < files.length; i++) {
+        const fileObj = files[i];
+        const fileName = fileObj.cleanedName || fileObj.originalName;
+        const fileNameBytes = new TextEncoder().encode(fileName);
+        
+        // Convertir File en ArrayBuffer
+        const arrayBuffer = await fileObj.originalFile.arrayBuffer();
+        const fileData = new Uint8Array(arrayBuffer);
+        
+        // CRC32 et taille
+        const crc = crc32(fileData);
+        
+        // Créer le local header
+        const header = new ArrayBuffer(30 + fileNameBytes.length);
+        const view = new DataView(header);
+        
+        // Signature
+        view.setUint32(0, 0x04034b50, true); // PK\x03\x04
+        
+        // Version minimale
+        view.setUint16(4, 20, true);
+        
+        // Flags (bit 3 = data descriptor not present)
+        view.setUint16(6, 0, true);
+        
+        // Compression method (0 = stored/non compressé)
+        view.setUint16(8, 0, true);
+        
+        // Modification time (DOS format)
+        view.setUint16(10, 0, true);
+        
+        // Modification date
+        view.setUint16(12, 0, true);
+        
+        // CRC32
+        view.setUint32(14, crc, true);
+        
+        // Compressed size
+        view.setUint32(18, fileData.length, true);
+        
+        // Uncompressed size
+        view.setUint32(22, fileData.length, true);
+        
+        // File name length
+        view.setUint16(26, fileNameBytes.length, true);
+        
+        // Extra field length
+        view.setUint16(28, 0, true);
+        
+        // File name
+        new Uint8Array(header, 30).set(fileNameBytes);
+        
+        // Ajouter le header local et les données
+        parts.push(new Uint8Array(header));
+        parts.push(fileData);
+        
+        // Garder une trace pour le central directory
+        localHeaders.push({
+            fileName,
+            fileNameBytes,
+            crc,
+            compressedSize: fileData.length,
+            uncompressedSize: fileData.length,
+            offset
+        });
+        
+        offset += header.byteLength + fileData.byteLength;
+        
+        // Respirer un peu
+        if (i % 10 === 0) {
+            await new Promise(r => setTimeout(r, 10));
+        }
+    }
+    
+    // 2. Créer le central directory
+    const centralDirParts = [];
+    let centralDirSize = 0;
+    
+    for (const info of localHeaders) {
+        const cdHeader = new ArrayBuffer(46 + info.fileNameBytes.length);
+        const view = new DataView(cdHeader);
+        
+        // Signature
+        view.setUint32(0, 0x02014b50, true); // PK\x01\x02
+        
+        // Version made by
+        view.setUint16(4, 20, true);
+        
+        // Version needed
+        view.setUint16(6, 20, true);
+        
+        // Flags
+        view.setUint16(8, 0, true);
+        
+        // Compression method
+        view.setUint16(10, 0, true);
+        
+        // Modification time
+        view.setUint16(12, 0, true);
+        
+        // Modification date
+        view.setUint16(14, 0, true);
+        
+        // CRC32
+        view.setUint32(16, info.crc, true);
+        
+        // Compressed size
+        view.setUint32(20, info.compressedSize, true);
+        
+        // Uncompressed size
+        view.setUint32(24, info.uncompressedSize, true);
+        
+        // File name length
+        view.setUint16(28, info.fileNameBytes.length, true);
+        
+        // Extra field length
+        view.setUint16(30, 0, true);
+        
+        // File comment length
+        view.setUint16(32, 0, true);
+        
+        // Disk number start
+        view.setUint16(34, 0, true);
+        
+        // Internal file attributes
+        view.setUint16(36, 0, true);
+        
+        // External file attributes
+        view.setUint32(38, 0, true);
+        
+        // Relative offset of local header
+        view.setUint32(42, info.offset, true);
+        
+        // File name
+        new Uint8Array(cdHeader, 46).set(info.fileNameBytes);
+        
+        centralDirParts.push(new Uint8Array(cdHeader));
+        centralDirSize += cdHeader.byteLength;
+    }
+    
+    // 3. Créer l'end of central directory record
+    const centralDirStart = offset;
+    const eocdHeader = new ArrayBuffer(22);
+    const view = new DataView(eocdHeader);
+    
+    // Signature
+    view.setUint32(0, 0x06054b50, true); // PK\x05\x06
+    
+    // Disk number
+    view.setUint16(4, 0, true);
+    
+    // Disk with central dir
+    view.setUint16(6, 0, true);
+    
+    // Entries on this disk
+    view.setUint16(8, localHeaders.length, true);
+    
+    // Total entries
+    view.setUint16(10, localHeaders.length, true);
+    
+    // Central dir size
+    view.setUint32(12, centralDirSize, true);
+    
+    // Central dir offset
+    view.setUint32(16, centralDirStart, true);
+    
+    // Comment length
+    view.setUint16(20, 0, true);
+    
+    // Assembler le ZIP final
+    parts.push(...centralDirParts);
+    parts.push(new Uint8Array(eocdHeader));
+    
+    // Créer le blob final
+    const blob = new Blob(parts, { type: 'application/zip' });
+    
+    console.log('✅ ZIP natif créé:', formatFileSize(blob.size));
+    return blob;
+}
+
+async function createArchive() {
+    const cleanedFiles = state.files.filter(f => f.cleaned);
+    
+    console.log('🔍 createArchive() appelé (ZIP natif)', { filesCount: cleanedFiles.length });
+    
+    if (cleanedFiles.length === 0) {
+        console.warn('⚠️ Aucun fichier nettoyé à archiver');
+        showNotification('Aucun fichier nettoyé à archiver', 'warning');
+        return;
+    }
+    
+    // Récupérer les options
+    const compressionLevel = parseInt(document.getElementById('compressionLevel')?.value || '5');
+    const usePassword = document.getElementById('usePassword')?.checked || false;
+    const archivePassword = document.getElementById('archivePassword')?.value || '';
+    const enableSplit = document.getElementById('enableSplit')?.checked || false;
+    const splitSize = parseInt(document.getElementById('splitSize')?.value || '500') * 1024 * 1024;
+    const archiveFormat = document.getElementById('archiveFormat')?.value || 'zip';
+    
+    // Validation du mot de passe
+    if (usePassword && !archivePassword) {
+        showNotification('Veuillez entrer un mot de passe', 'warning');
+        return;
+    }
+    
+    // Note: pas de compression pour la démo (ZIP valide mais non compressé)
+    if (usePassword) {
+        showNotification('⚠️ Note: Le mot de passe n\'est pas supporté. Les fichiers seront non chiffrés.', 'info');
+    }
+    
+    closeArchiveModal();
+    showProgressBar();
+    
+    try {
+        const archiveName = `cleaned_files_${Date.now()}`;
+        const totalSize = cleanedFiles.reduce((sum, f) => sum + f.size, 0);
+        
+        console.log('📦 Création archive ZIP natif', { 
+            archiveName, 
+            totalSize: formatFileSize(totalSize),
+            filesCount: cleanedFiles.length
+        });
+        
+        // Créer le ZIP natif
+        let processedSize = 0;
+        for (let i = 0; i < cleanedFiles.length; i++) {
+            const fileObj = cleanedFiles[i];
+            const percent = (i / cleanedFiles.length) * 100;
+            const fileName = `${fileObj.cleanedName || fileObj.originalName}`;
+            
+            updateProgressBar(percent, `Traitement: ${i + 1}/${cleanedFiles.length}`);
+            
+            // Laisser respirer le navigateur
+            if (i % 5 === 0) {
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+        }
+        
+        updateProgressBar(75, 'Génération du ZIP...');
+        
+        const blob = await createNativeZip(cleanedFiles);
+        
+        console.log('✅ Archive ZIP généré avec succès', { 
+            blobSize: formatFileSize(blob.size),
+            type: blob.type 
+        });
+        
+        // Télécharger l'archive
+        updateProgressBar(90, 'Téléchargement de l\'archive...');
+        
+        let ext = 'zip';
+        if (archiveFormat === '7z') {
+            ext = '7z';
+        } else if (archiveFormat === 'rar') {
+            ext = 'rar';
+        }
+        
+        const downloadName = `${archiveName}.${ext}`;
+        
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = downloadName;
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        updateProgressBar(100, 'Téléchargement terminé!');
+        showNotification(`Archive créée et téléchargée (${formatFileSize(blob.size)})`, 'success');
+        
+        addToArchiveHistory({
+            name: downloadName,
+            size: blob.size,
+            filesCount: cleanedFiles.length,
+            created: Date.now(),
+            options: { compressionLevel, usePassword: false, enableSplit, archiveFormat }
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de la création de l\'archive:', error);
+        console.error('   Stack:', error.stack);
+        console.error('   Message:', error.message);
+        
+        showNotification('Erreur lors de la création de l\'archive: ' + error.message, 'error');
+    } finally {
+        hideProgressBar();
+        console.log('📊 createArchive() terminé');
+    }
+}
+
+/**
+ * Ajoute une archive à l'historique
+ */
+function addToArchiveHistory(archiveInfo) {
+    archiveState.history.unshift(archiveInfo);
+    
+    // Limiter l'historique à maxHistoryItems
+    if (archiveState.history.length > archiveState.maxHistoryItems) {
+        archiveState.history = archiveState.history.slice(0, archiveState.maxHistoryItems);
+    }
+    
+    // Sauvegarder l'historique
+    try {
+        localStorage.setItem('archive_history', JSON.stringify(archiveState.history));
+    } catch (e) {
+        console.warn('❌ Impossible de sauvegarder l\'historique:', e);
+    }
+}
+
+/**
+ * Charge l'historique des archives depuis le localStorage
+ */
+function loadArchiveHistory() {
+    try {
+        const saved = localStorage.getItem('archive_history');
+        if (saved) {
+            archiveState.history = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.warn('❌ Impossible de charger l\'historique:', e);
+    }
+}
+
+/**
+ * Télécharge une archive depuis l'historique en recréant l'archive avec les mêmes options
+ */
+function downloadArchiveFromHistory(index) {
+    if (!archiveState.history[index]) {
+        showNotification('Archive non trouvée dans l\'historique', 'error');
+        return;
+    }
+    
+    const archiveInfo = archiveState.history[index];
+    
+    // Récupérer les options de l'archive
+    if (archiveInfo.options) {
+        document.getElementById('compressionLevel').value = archiveInfo.options.compressionLevel || '5';
+        document.getElementById('usePassword').checked = false; // Ne pas re-demander le mot de passe
+        document.getElementById('enableSplit').checked = archiveInfo.options.enableSplit || false;
+        document.getElementById('archiveFormat').value = archiveInfo.options.archiveFormat || 'zip';
+    }
+    
+    // Créer une nouvelle archive avec les mêmes options
+    showNotification(`Création de l\'archive: ${escapeHtml(archiveInfo.name)}...`, 'info');
+    createArchive()
+}
+
+/**
+ * Affiche les informations sur le format d'archive sélectionné
+ */
+function updateArchiveFormatInfo() {
+    const formatSelect = document.getElementById('archiveFormat');
+    const formatInfo = document.getElementById('formatInfo');
+    const formatDetails = document.getElementById('formatDetails');
+    const softwareLinks = document.getElementById('softwareLinks');
+    
+    if (!formatSelect || !formatInfo) return;
+    
+    const format = formatSelect.value;
+    let info = '';
+    let links = '';
+    
+    switch(format) {
+        case 'zip':
+            info = '✅ ZIP est l\'format le plus universel. Compatible avec Windows, Mac et Linux nativement. Aucun logiciel supplémentaire requis.';
+            formatInfo.style.display = 'none';
+            break;
+        case '7z':
+            info = '⚠️ Format 7Z offre une meilleure compression que ZIP, mais nécessite un logiciel compatible. Téléchargez 7-Zip ci-dessous pour créer/ouvrir des archives 7Z.';
+            links = `<a href="https://www.7-zip.org/" target="_blank" rel="noopener">📥 Télécharger 7-Zip</a>`;
+            formatInfo.style.display = 'block';
+            break;
+        case 'rar':
+            info = '⚠️ RAR est un format propriétaire offrant une bonne compression. Téléchargez WinRAR pour créer/ouvrir des archives RAR. Cette version crée un ZIP que vous pouvez renommer en .rar.';
+            links = `<a href="https://www.win-rar.com/" target="_blank" rel="noopener">📥 Télécharger WinRAR</a> | <a href="https://www.7-zip.org/" target="_blank" rel="noopener">📥 7-Zip (gratuit)</a>`;
+            formatInfo.style.display = 'block';
+            break;
+    }
+    
+    if (formatDetails) formatDetails.innerHTML = info;
+    if (softwareLinks) softwareLinks.innerHTML = links;
+}
+
+/* Modal intrusif pour logiciel manquant */
+function showMissingSoftwareModal(message) {
+    const modal = document.getElementById('missingSoftwareModal');
+    const text = document.getElementById('missingModalText');
+    const dismiss = document.getElementById('missingDismiss');
+    if (!modal) return;
+    if (text) text.textContent = message || 'Le serveur n\'a pas trouvé l\'outil nécessaire pour créer le format demandé.';
+    modal.style.display = 'block';
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    // Liaisons
+    const closeBtns = modal.querySelectorAll('.modal-close, #missingDismiss');
+    closeBtns.forEach(b => b.addEventListener('click', hideMissingSoftwareModal));
+
+    const testNowBtn = document.getElementById('missingTestNow');
+    const testResult = document.getElementById('missingTestResult');
+    if (testNowBtn) {
+        testNowBtn.addEventListener('click', async () => {
+            if (testResult) testResult.textContent = 'Test en cours...';
+            try {
+                const base = location.origin;
+                const resp = await checkServer7z(base + '/check7z');
+                if (resp && resp.ok) {
+                    if (testResult) testResult.textContent = '7‑Zip détecté sur le serveur';
+                    showNotification('7‑Zip détecté sur le serveur', 'success');
+                } else {
+                    if (testResult) testResult.textContent = '7‑Zip non détecté';
+                    showNotification('7‑Zip non détecté sur le serveur', 'warning');
+                }
+            } catch (err) {
+                if (testResult) testResult.textContent = 'Erreur: ' + (err.message || err);
+                showNotification('Erreur lors du test serveur: ' + (err.message || err), 'error');
+            }
+            setTimeout(() => { if (testResult) testResult.textContent = ''; }, 5000);
+        });
+    }
+}
+
+function hideMissingSoftwareModal() {
+    const modal = document.getElementById('missingSoftwareModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+}
+
+/**
+ * Envoie les fichiers nettoyés au serveur pour création d'une archive 7z
+ * @param {string} serverUrl - URL du endpoint serveur
+ */
+function sendFilesToServerFor7z(serverUrl) {
+    showNotification('Conversion serveur désactivée. Utilisez le ZIP côté client ou les téléchargements séquentiels.', 'info');
+    return;
+    const cleanedFiles = state.files.filter(f => f.cleaned);
+    if (cleanedFiles.length === 0) {
+        showNotification('Aucun fichier nettoyé à envoyer', 'warning');
+        return;
+    }
+
+    const endpoint = serverUrl || (location.origin + '/convert7z');
+
+    const compressionLevel = parseInt(document.getElementById('compressionLevel')?.value || '9');
+
+    const form = new FormData();
+    cleanedFiles.forEach((f, idx) => {
+        // Append with cleaned filename as filename metadata
+        form.append('files[]', f.originalFile, f.cleanedName || f.originalName);
+    });
+
+    form.append('compression', String(compressionLevel));
+
+    // UI
+    closeArchiveModal();
+    showProgressBar();
+    updateProgressBar(5, 'Préparation de l\'envoi vers le serveur...');
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', endpoint, true);
+    xhr.responseType = 'blob';
+
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            updateProgressBar(10 + Math.round(pct * 0.6), `Upload: ${pct}%`);
+        }
+    };
+
+    xhr.onprogress = function(e) {
+        // download progress after response starts
+        if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            updateProgressBar(70 + Math.round(pct * 0.3), `Téléchargement archive: ${pct}%`);
+        }
+    };
+
+    xhr.onload = function() {
+        hideProgressBar();
+        if (xhr.status >= 200 && xhr.status < 300) {
+            const disposition = xhr.getResponseHeader('Content-Disposition') || '';
+            let filename = 'archive.7z';
+            const match = /filename="?([^";]+)"?/.exec(disposition);
+            if (match && match[1]) filename = match[1];
+
+            const blob = xhr.response;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 200);
+
+            showNotification(`Archive créée sur le serveur et téléchargée (${formatFileSize(blob.size)})`, 'success');
+            addToArchiveHistory({ name: filename, size: blob.size, filesCount: cleanedFiles.length, created: Date.now(), options: { server: endpoint, compressionLevel } });
+        } else {
+            // Lire la réponse d'erreur et afficher un message utile
+            const reader = new FileReader();
+            reader.onload = function() {
+                const text = reader.result || '';
+                let parsed = null;
+                try { parsed = JSON.parse(text); } catch(e) { parsed = null; }
+
+                console.error('Erreur serveur:', xhr.status, parsed || text);
+
+                const message = (parsed && parsed.error) ? parsed.error : (text || `Erreur serveur ${xhr.status}`);
+                showNotification('Erreur serveur lors de la conversion: ' + message, 'error');
+
+                // Si le message indique que 7z est manquant, afficher le panneau d'aide
+                const notice = document.getElementById('missingSoftwareNotice');
+                const missingText = document.getElementById('missingSoftwareText');
+                const download7z = document.getElementById('download7zBtn');
+                const downloadWinRar = document.getElementById('downloadWinRarBtn');
+                const dismiss = document.getElementById('dismissMissingSoftware');
+
+                if (message && (message.toLowerCase().includes('7z') || message.toLowerCase().includes('7-zip') || message.toLowerCase().includes('non trouv'))) {
+                    // Ouvrir modal intrusif pour proposer le téléchargement / instructions
+                    showMissingSoftwareModal('Le serveur indique que 7‑Zip est introuvable. Installez 7‑Zip sur le serveur (ou localement) pour activer la conversion en .7z.');
+                } else {
+                    // Montrer modal générique avec le message d'erreur
+                    showMissingSoftwareModal(message);
+                }
+            };
+            reader.readAsText(xhr.response || new Blob());
+        }
+    };
+
+    xhr.onerror = function() {
+        hideProgressBar();
+        showNotification('Erreur réseau lors de l\'envoi au serveur', 'error');
+    };
+
+    try {
+        xhr.send(form);
+    } catch (e) {
+        hideProgressBar();
+        console.error('Erreur envoi XHR:', e);
+        showNotification('Impossible d\'envoyer les fichiers au serveur', 'error');
+    }
+}
+
+/**
+ * Vérifie que la racine du serveur est joignable (GET /)
+ * @param {string} rootUrl
+ * @returns {Promise<boolean>}
+ */
+async function checkServerRoot(rootUrl) {
+    try {
+        const url = rootUrl.endsWith('/') ? rootUrl : (rootUrl + '/');
+        const r = await fetch(url, { method: 'GET' });
+        return r.ok;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Vérifie la présence de 7z sur le serveur via /check7z
+ * @param {string} checkUrl
+ * @returns {Promise<Object>} JSON response
+ */
+async function checkServer7z(checkUrl) {
+    try {
+        const url = checkUrl || (location.origin + '/check7z');
+        const r = await fetch(url, { method: 'GET' });
+        if (!r.ok) {
+            const body = await r.json().catch(() => null);
+            throw new Error((body && body.error) ? body.error : 'Serveur non disponible');
+        }
+        return await r.json();
+    } catch (e) {
+        throw e;
+    }
+}
+
+/**
+ * Configure les événements du modal d'archivage
+ */
+function setupArchiveModal() {
+    const modal = document.getElementById('archiveModal');
+    if (!modal) return;
+    
+    // Bouton fermer
+    const closeBtn = modal.querySelector('.modal-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeArchiveModal);
+    }
+    
+    // Fermer en cliquant à l'extérieur
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeArchiveModal();
+    });
+    
+    // Fermer avec Échap
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            closeArchiveModal();
+        }
+    });
+    
+    // Bouton Annuler
+    const cancelBtn = document.getElementById('cancelArchiveBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeArchiveModal);
+    }
+    
+    // Bouton Créer Archive
+    const createBtn = document.getElementById('createArchiveBtn');
+    if (createBtn) {
+        createBtn.addEventListener('click', createArchive);
+    }
+    
+    // Changement du format d'archive
+    const formatSelect = document.getElementById('archiveFormat');
+    if (formatSelect) {
+        formatSelect.addEventListener('change', updateArchiveFormatInfo);
+        // Initialiser l'info au chargement du modal
+        updateArchiveFormatInfo();
+    }
+    
+    // Checkbox Mot de passe
+    const usePasswordCheckbox = document.getElementById('usePassword');
+    const passwordInput = document.getElementById('archivePassword');
+    if (usePasswordCheckbox && passwordInput) {
+        usePasswordCheckbox.addEventListener('change', (e) => {
+            passwordInput.disabled = !e.target.checked;
+        });
+    }
+    
+    // Checkbox Split
+    const enableSplitCheckbox = document.getElementById('enableSplit');
+    const splitOptions = document.getElementById('splitOptions');
+    if (enableSplitCheckbox && splitOptions) {
+        enableSplitCheckbox.addEventListener('change', (e) => {
+            splitOptions.style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
+
+    // Option: Utiliser le serveur pour conversion 7z
+    const useServerConvert = document.getElementById('useServerConvert');
+    const serverConvertOptions = document.getElementById('serverConvertOptions');
+    const serverConvertBtn = document.getElementById('serverConvertBtn');
+    const serverConvertCancel = document.getElementById('serverConvertCancel');
+    const serverEndpointInput = document.getElementById('serverEndpoint');
+
+    if (useServerConvert && serverConvertOptions) {
+        useServerConvert.addEventListener('change', (e) => {
+            serverConvertOptions.style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
+
+    // Si l'utilisateur préfère revenir à un état sans conversion serveur,
+    // masquer et désactiver les contrôles serveur pour éviter les envois par erreur.
+    try {
+        if (useServerConvert) {
+            useServerConvert.checked = false;
+            useServerConvert.style.display = 'none';
+        }
+        if (serverConvertOptions) serverConvertOptions.style.display = 'none';
+        const serverConvertBtnLocal = document.getElementById('serverConvertBtn');
+        const serverCheckBtnLocal = document.getElementById('serverCheckBtn');
+        if (serverConvertBtnLocal) serverConvertBtnLocal.disabled = true;
+        if (serverCheckBtnLocal) serverCheckBtnLocal.disabled = true;
+    } catch (e) {
+        // ignore si éléments manquants
+    }
+
+    if (serverConvertBtn) {
+        serverConvertBtn.addEventListener('click', () => {
+            const url = serverEndpointInput?.value || (location.origin + '/convert7z');
+            sendFilesToServerFor7z(url);
+        });
+    }
+
+    const serverCheckBtn = document.getElementById('serverCheckBtn');
+    const serverCheckResult = document.getElementById('serverCheckResult');
+    if (serverCheckBtn) {
+        serverCheckBtn.addEventListener('click', async () => {
+            const url = serverEndpointInput?.value || (location.origin + '/');
+            if (serverCheckResult) serverCheckResult.textContent = 'Vérification...';
+            try {
+                const ok = await checkServerRoot(url);
+                if (serverCheckResult) serverCheckResult.textContent = ok ? 'Serveur OK' : 'Serveur non joignable';
+            } catch (e) {
+                if (serverCheckResult) serverCheckResult.textContent = 'Erreur: ' + (e.message || e);
+            }
+            setTimeout(() => { if (serverCheckResult) serverCheckResult.textContent = ''; }, 4000);
+        });
+    }
+
+    if (serverConvertCancel) {
+        serverConvertCancel.addEventListener('click', () => {
+            if (useServerConvert) {
+                useServerConvert.checked = false;
+                serverConvertOptions.style.display = 'none';
+            }
+        });
+    }
+    
+    console.log('📦 Modal d\'archivage configuré');
+}
+
+// ============================================================================
+// Suppression individuelle et globale des fichiers
+// ============================================================================
+
+/**
+ * Supprime un fichier spécifique par son ID
+ * @param {string} fileId - ID du fichier à supprimer
+ */
+function removeFile(fileId) {
+    const fileIndex = state.files.findIndex(f => f.id === fileId);
+    if (fileIndex === -1) return;
+    
+    // Mettre à jour la taille totale
+    state.totalSize -= state.files[fileIndex].size;
+    
+    // Supprimer le fichier
+    state.files.splice(fileIndex, 1);
+    
+    updateFileList();
+    updateUI();
+    updateStats();
+    
+    showNotification(CONFIG.messages.fileRemoved, 'info');
+}
+
+/**
+ * Supprime tous les fichiers après confirmation
+ */
+function clearAllFiles() {
+    if (state.files.length === 0) {
+        showNotification('Aucun fichier à supprimer', 'info');
+        return;
+    }
+    
+    const confirmMessage = `Voulez-vous vraiment supprimer ${state.files.length} fichier(s) ?\n(${formatFileSize(state.totalSize)} de données)`;
+    
+    if (confirm(confirmMessage)) {
+        state.files = [];
+        state.totalSize = 0;
+        
+        // Réinitialiser l'input file
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) fileInput.value = '';
+        
+        updateFileList();
+        updateUI();
+        updateStats();
+        
+        showNotification(CONFIG.messages.allCleared, 'info');
+    }
+}
+
+// ============================================================================
+// SECTION 10 : MISE À JOUR DE L'INTERFACE
+// Fonctions de rendu et d'affichage
+// ============================================================================
+
+/**
+ * Met à jour la liste complète des fichiers dans l'interface
  */
 function updateFileList() {
     const container = document.getElementById('filesContainer');
-    if (!container) {
-        console.error('Conteneur de fichiers non trouvé');
-        return;
-    }
-    
-    console.log('Mise à jour de la liste, fichiers:', state.files.length);
+    if (!container) return;
     
     if (state.files.length === 0) {
         container.innerHTML = '<p class="empty-message">Aucun fichier uploadé</p>';
         return;
     }
     
+    // Construire le HTML
     let html = '';
     
+    // Compteur en haut
+    html += `
+        <div class="files-counter">
+            <span class="files-counter-text">Fichiers chargés</span>
+            <span class="files-counter-value">${state.files.length} / ${CONFIG.maxFiles}</span>
+        </div>
+    `;
+    
+    // Cartes de fichiers
     state.files.forEach((file, index) => {
         const isCleaned = file.cleaned && file.cleanedName;
         const displayName = isCleaned ? file.cleanedName : file.originalName;
+        const sizeClass = file.size > 500 * 1024 * 1024 ? 'very-large' : 
+                         file.size > 100 * 1024 * 1024 ? 'large' : '';
         
         html += `
-            <div class="file-card ${file.error ? 'error' : ''}" id="file-${file.id}" data-index="${index}">
+            <div class="file-card ${isCleaned ? 'cleaned' : ''}" id="file-${file.id}">
                 <div class="file-icon">${file.icon}</div>
                 <div class="file-info">
-                    <div class="file-name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</div>
+                    <div class="file-name" title="${escapeHtml(displayName)}">
+                        ${escapeHtml(displayName)}
+                    </div>
                     ${isCleaned ? `
                         <div class="file-name original" title="${escapeHtml(file.originalName)}">
                             ${escapeHtml(file.originalName)}
                         </div>
                     ` : ''}
                     <div class="file-details">
-                        <span>${file.size}</span>
+                        <span class="file-size ${sizeClass}">${file.formattedSize}</span>
                         <span>${file.type}</span>
                         <span>#${index + 1}</span>
                     </div>
                 </div>
                 <div class="file-actions">
                     ${!isCleaned ? `
-                        <button class="action-btn clean" onclick="cleanFile('${file.id}')">
+                        <button class="action-btn clean" onclick="cleanFile('${file.id}')" title="Nettoyer le nom">
                             <span>✨</span> Nettoyer
                         </button>
                     ` : ''}
-                    <button class="action-btn download" onclick="downloadFile('${file.id}')">
+                    <button class="action-btn download" onclick="downloadFile('${file.id}')" title="Télécharger">
                         <span>⬇️</span> Télécharger
                     </button>
-                    <button class="action-btn delete" onclick="removeFile('${file.id}')">
+                    <button class="action-btn delete" onclick="removeFile('${file.id}')" title="Supprimer">
                         <span>🗑️</span> Supprimer
                     </button>
                 </div>
@@ -603,279 +1639,161 @@ function updateFileList() {
     });
     
     container.innerHTML = html;
-    console.log('Liste des fichiers mise à jour avec', state.files.length, 'élément(s)');
 }
 
 /**
- * Met à jour un élément de fichier spécifique
+ * Met à jour un seul élément de fichier (optimisation)
+ * @param {string} fileId - ID du fichier à mettre à jour
  */
 function updateFileItem(fileId) {
-    const file = state.files.find(f => f.id === fileId);
-    if (!file) return;
-    
-    const element = document.getElementById(`file-${fileId}`);
-    if (!element) return;
-    
-    const isCleaned = file.cleaned && file.cleanedName;
-    const displayName = isCleaned ? file.cleanedName : file.originalName;
-    const index = state.files.findIndex(f => f.id === fileId);
-    
-    element.innerHTML = `
-        <div class="file-icon">${file.icon}</div>
-        <div class="file-info">
-            <div class="file-name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</div>
-            ${isCleaned ? `
-                <div class="file-name original" title="${escapeHtml(file.originalName)}">
-                    ${escapeHtml(file.originalName)}
-                </div>
-            ` : ''}
-            <div class="file-details">
-                <span>${file.size}</span>
-                <span>${file.type}</span>
-                <span>#${index + 1}</span>
-            </div>
-        </div>
-        <div class="file-actions">
-            ${!isCleaned ? `
-                <button class="action-btn clean" onclick="cleanFile('${file.id}')">
-                    <span>✨</span> Nettoyer
-                </button>
-            ` : ''}
-            <button class="action-btn download" onclick="downloadFile('${file.id}')">
-                <span>⬇️</span> Télécharger
-            </button>
-            <button class="action-btn delete" onclick="removeFile('${file.id}')">
-                <span>🗑️</span> Supprimer
-            </button>
-        </div>
-    `;
+    // Pour simplifier, on recharge toute la liste
+    // Une optimisation serait de ne mettre à jour que l'élément concerné
+    updateFileList();
 }
 
 /**
- * Supprime un fichier
- */
-function removeFile(fileId) {
-    const initialCount = state.files.length;
-    state.files = state.files.filter(f => f.id !== fileId);
-    
-    if (state.files.length < initialCount) {
-        updateFileList();
-        updateUI();
-        showNotification('Fichier supprimé', 'info');
-    }
-}
-
-/**
- * Supprime tous les fichiers
- */
-function clearAllFiles() {
-    if (state.files.length === 0) {
-        showNotification('Aucun fichier à supprimer', 'info');
-        return;
-    }
-    
-    if (confirm(`Voulez-vous vraiment supprimer ${state.files.length} fichier(s) ?`)) {
-        state.files = [];
-        updateFileList();
-        updateUI();
-        
-        // Réinitialiser l'input de fichier
-        const fileInput = document.getElementById('fileInput');
-        if (fileInput) {
-            fileInput.value = '';
-        }
-        
-        showNotification('Tous les fichiers ont été supprimés', 'info');
-    }
-}
-
-/**
- * Met à jour l'interface en fonction de l'état
+ * Met à jour l'état des boutons globaux
  */
 function updateUI() {
     const hasFiles = state.files.length > 0;
     const hasCleanedFiles = state.files.some(f => f.cleaned);
+    const hasUncleanedFiles = state.files.some(f => !f.cleaned);
     
-    // Bouton "Nettoyer tous les noms"
+    // Bouton nettoyer tous
     const cleanAllBtn = document.getElementById('cleanAllBtn');
     if (cleanAllBtn) {
-        cleanAllBtn.disabled = !hasFiles;
-        cleanAllBtn.title = hasFiles ? 'Nettoyer tous les noms de fichiers' : 'Ajoutez d\'abord des fichiers';
+        cleanAllBtn.disabled = !hasUncleanedFiles;
     }
     
-    // Bouton "Télécharger tout"
+    // Bouton télécharger tous
     const downloadAllBtn = document.getElementById('downloadAllBtn');
     if (downloadAllBtn) {
         downloadAllBtn.disabled = !hasCleanedFiles;
-        downloadAllBtn.title = hasCleanedFiles ? 'Télécharger tous les fichiers nettoyés' : 'Nettoyez d\'abord les fichiers';
     }
     
-    // Mettre à jour le compteur dans l'en-tête si présent
-    const fileCountElement = document.querySelector('.file-count');
-    if (fileCountElement) {
-        fileCountElement.textContent = `(${state.files.length})`;
+    // Bouton tout effacer
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    if (clearAllBtn) {
+        clearAllBtn.disabled = !hasFiles;
+    }
+}
+
+/**
+ * Met à jour les statistiques d'utilisation
+ */
+function updateStats() {
+    // Pourcentage de fichiers utilisés
+    const filesPercent = (state.files.length / CONFIG.maxFiles) * 100;
+    
+    // Pourcentage de taille utilisée
+    const sizePercent = (state.totalSize / CONFIG.maxTotalSize) * 100;
+    
+    // Mettre à jour les éléments si ils existent
+    const statsContainer = document.getElementById('uploadStats');
+    if (statsContainer) {
+        statsContainer.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-icon">📁</div>
+                <div class="stat-value">${state.files.length}</div>
+                <div class="stat-label">Fichiers / ${CONFIG.maxFiles}</div>
+                <div class="stat-gauge">
+                    <div class="stat-gauge-fill ${filesPercent > 80 ? 'danger' : filesPercent > 50 ? 'warning' : ''}" 
+                         style="width: ${filesPercent}%"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💾</div>
+                <div class="stat-value">${formatFileSize(state.totalSize)}</div>
+                <div class="stat-label">Utilisé / ${formatFileSize(CONFIG.maxTotalSize)}</div>
+                <div class="stat-gauge">
+                    <div class="stat-gauge-fill ${sizePercent > 80 ? 'danger' : sizePercent > 50 ? 'warning' : ''}" 
+                         style="width: ${sizePercent}%"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value">${state.files.filter(f => f.cleaned).length}</div>
+                <div class="stat-label">Fichiers nettoyés</div>
+            </div>
+        `;
     }
 }
 
 // ============================================================================
-// GESTION DES OPTIONS
+// SECTION 11 : BARRE DE PROGRESSION
+// Affichage de la progression pour les gros volumes
 // ============================================================================
 
 /**
- * Configure les écouteurs pour les options
+ * Affiche la barre de progression
  */
-function setupOptionListeners() {
-    // Option underscores
-    const underscoresOption = document.getElementById('underscoresOption');
-    if (underscoresOption) {
-        underscoresOption.addEventListener('change', (e) => {
-            state.options.useUnderscores = e.target.checked;
-            saveOptions();
-            // Re-nettoyer si des fichiers sont présents
-            if (state.files.length > 0) {
-                state.files.forEach(file => {
-                    if (file.cleaned) {
-                        file.cleanedName = cleanFileName(file.originalName);
-                    }
-                });
-                updateFileList();
-            }
-        });
-    }
-    
-    // Option minuscules
-    const lowercaseOption = document.getElementById('lowercaseOption');
-    if (lowercaseOption) {
-        lowercaseOption.addEventListener('change', (e) => {
-            state.options.toLowercase = e.target.checked;
-            saveOptions();
-            // Re-nettoyer si des fichiers sont présents
-            if (state.files.length > 0) {
-                state.files.forEach(file => {
-                    if (file.cleaned) {
-                        file.cleanedName = cleanFileName(file.originalName);
-                    }
-                });
-                updateFileList();
-            }
-        });
-    }
-    
-    // Option de préfixe
-    const prefixOption = document.getElementById('prefixOption');
-    if (prefixOption) {
-        prefixOption.addEventListener('change', (e) => {
-            state.options.usePrefix = e.target.checked;
-            saveOptions();
-            // Re-nettoyer si des fichiers sont présents
-            if (state.files.length > 0) {
-                state.files.forEach(file => {
-                    if (file.cleaned) {
-                        file.cleanedName = cleanFileName(file.originalName);
-                    }
-                });
-                updateFileList();
-            }
-        });
+function showProgressBar() {
+    const progressContainer = document.getElementById('uploadProgress');
+    if (progressContainer) {
+        progressContainer.style.display = 'block';
+        progressContainer.classList.add('active');
     }
 }
 
 /**
- * Configure l'écouteur pour le champ préfixe
+ * Met à jour la barre de progression
+ * @param {number} percent - Pourcentage de progression (0-100)
+ * @param {string} text - Texte à afficher
  */
-function setupPrefixListener() {
-    const prefixText = document.getElementById('prefixText');
+function updateProgressBar(percent, text) {
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
     
-    if (prefixText) {
-        prefixText.addEventListener('input', (e) => {
-            state.options.prefix = e.target.value || 'clean_';
-            saveOptions();
-            // Re-nettoyer si des fichiers sont présents
-            if (state.files.length > 0) {
-                state.files.forEach(file => {
-                    if (file.cleaned) {
-                        file.cleanedName = cleanFileName(file.originalName);
-                    }
-                });
-                updateFileList();
-            }
-        });
+    if (progressFill) {
+        progressFill.style.width = `${percent}%`;
+    }
+    
+    if (progressText) {
+        progressText.textContent = text;
     }
 }
 
 /**
- * Charge les options depuis le localStorage
+ * Masque la barre de progression
  */
-function loadOptions() {
-    try {
-        const saved = localStorage.getItem('fileCleanerOptions');
-        if (saved) {
-            const options = JSON.parse(saved);
-            state.options = { ...state.options, ...options };
-            
-            // Mettre à jour l'interface
-            updateOptionsUI();
-            console.log('Options chargées:', state.options);
-        }
-    } catch (e) {
-        console.error('Erreur lors du chargement des options:', e);
-    }
-    
-    try {
-        const savedChars = localStorage.getItem('fileCleanerChars');
-        if (savedChars) {
-            const chars = JSON.parse(savedChars);
-            state.invalidChars = new Set(chars);
-            updateCharPreview();
-            console.log('Caractères chargés:', state.invalidChars.size, 'caractère(s)');
-        }
-    } catch (e) {
-        console.error('Erreur lors du chargement des caractères:', e);
-    }
-}
-
-/**
- * Sauvegarde les options dans le localStorage
- */
-function saveOptions() {
-    try {
-        localStorage.setItem('fileCleanerOptions', JSON.stringify(state.options));
-        localStorage.setItem('fileCleanerChars', JSON.stringify([...state.invalidChars]));
-        console.log('Options sauvegardées');
-    } catch (e) {
-        console.error('Erreur lors de la sauvegarde:', e);
-    }
-}
-
-/**
- * Met à jour l'interface des options
- */
-function updateOptionsUI() {
-    const underscoresOption = document.getElementById('underscoresOption');
-    const lowercaseOption = document.getElementById('lowercaseOption');
-    const prefixOption = document.getElementById('prefixOption');
-    const prefixText = document.getElementById('prefixText');
-    
-    if (underscoresOption) underscoresOption.checked = state.options.useUnderscores;
-    if (lowercaseOption) lowercaseOption.checked = state.options.toLowercase;
-    if (prefixOption) prefixOption.checked = state.options.usePrefix;
-    if (prefixText) {
-        prefixText.value = state.options.prefix;
-    }
-    
-    // Afficher/masquer le champ préfixe
-    const prefixInputContainer = document.getElementById('prefixInputContainer');
-    if (prefixInputContainer) {
-        prefixInputContainer.style.display = state.options.usePrefix ? 'block' : 'none';
+function hideProgressBar() {
+    const progressContainer = document.getElementById('uploadProgress');
+    if (progressContainer) {
+        progressContainer.style.display = 'none';
+        progressContainer.classList.remove('active');
     }
 }
 
 // ============================================================================
-// GESTION DES CARACTÈRES
+// SECTION 12 : GESTION DES CARACTÈRES
+// Modal et fonctions d'édition des caractères invalides
 // ============================================================================
 
 /**
- * Met à jour l'aperçu des caractères
+ * Ouvre le modal d'édition des caractères
+ */
+function openCharModal() {
+    const modal = document.getElementById('charModal');
+    if (modal) {
+        updateCharModalList();
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+/**
+ * Ferme le modal d'édition des caractères
+ */
+function closeCharModal() {
+    const modal = document.getElementById('charModal');
+    if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Met à jour l'aperçu des caractères dans la page principale
  */
 function updateCharPreview() {
     const preview = document.getElementById('charPreview');
@@ -883,14 +1801,14 @@ function updateCharPreview() {
     
     const chars = Array.from(state.invalidChars).slice(0, 20);
     
-    preview.innerHTML = chars.map(char => 
-        `<span title="${char === ' ' ? 'Espace' : char}">${
-            char === ' ' ? '[ ]' : 
-            char === '\t' ? '[tab]' : 
-            char === '\n' ? '[nl]' : 
-            escapeHtml(char)
-        }</span>`
-    ).join('');
+    preview.innerHTML = chars.map(char => {
+        const display = char === ' ' ? '[espace]' :
+                       char === '\t' ? '[tab]' :
+                       char === '\n' ? '[nl]' :
+                       char === '\r' ? '[cr]' :
+                       escapeHtml(char);
+        return `<span title="${escapeHtml(char)}">${display}</span>`;
+    }).join('');
     
     if (state.invalidChars.size > 20) {
         preview.innerHTML += `<span>+${state.invalidChars.size - 20}...</span>`;
@@ -898,55 +1816,28 @@ function updateCharPreview() {
 }
 
 /**
- * Ouvre le modal d'édition des caractères
+ * Met à jour la liste des caractères dans le modal
  */
-function openCharModal() {
-    const modal = document.getElementById('charModal');
-    if (!modal) return;
-    
-    updateCharModal();
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-    
-    // Réinitialiser le compteur
-    const charCountElement = document.getElementById('charCount');
-    if (charCountElement) {
-        charCountElement.textContent = '0';
-        charCountElement.style.color = '#6c757d';
-    }
-}
-
-/**
- * Ferme le modal
- */
-function closeCharModal() {
-    const modal = document.getElementById('charModal');
-    if (!modal) return;
-    
-    modal.classList.remove('show');
-    document.body.style.overflow = '';
-}
-
-/**
- * Met à jour le contenu du modal
- */
-function updateCharModal() {
+function updateCharModalList() {
     const container = document.getElementById('charListDisplay');
     if (!container) return;
     
     const chars = Array.from(state.invalidChars).sort();
     
-    container.innerHTML = chars.map(char => `
-        <div class="char-item">
-            <div class="char-text">${
-                char === ' ' ? '[espace]' : 
-                char === '\t' ? '[tab]' : 
-                char === '\n' ? '[nl]' : 
-                escapeHtml(char)
-            }</div>
-            <button class="char-remove" onclick="removeCharFromModal('${escapeHtml(char)}')">×</button>
-        </div>
-    `).join('');
+    container.innerHTML = chars.map(char => {
+        const display = char === ' ' ? '[espace]' :
+                       char === '\t' ? '[tab]' :
+                       char === '\n' ? '[nl]' :
+                       char === '\r' ? '[cr]' :
+                       escapeHtml(char);
+        
+        return `
+            <div class="char-item">
+                <span class="char-text">${display}</span>
+                <button class="char-remove" onclick="removeCharFromList('${escapeHtml(char)}')" title="Supprimer">×</button>
+            </div>
+        `;
+    }).join('');
 }
 
 /**
@@ -954,50 +1845,31 @@ function updateCharModal() {
  */
 function updateCharCounter() {
     const input = document.getElementById('newCharInput');
-    const charCountElement = document.getElementById('charCount');
+    const counter = document.getElementById('charCount');
     
-    if (!input || !charCountElement) return;
+    if (!input || !counter) return;
     
-    const text = input.value;
-    const uniqueChars = new Set();
+    const uniqueChars = new Set(input.value);
+    counter.textContent = uniqueChars.size;
     
-    for (let char of text) {
-        uniqueChars.add(char);
-    }
-    
-    const count = uniqueChars.size;
-    charCountElement.textContent = count;
-    
-    // Changer la couleur en fonction du nombre
-    if (count === 0) {
-        charCountElement.style.color = '#6c757d';
-    } else if (count <= 10) {
-        charCountElement.style.color = '#28a745';
-    } else {
-        charCountElement.style.color = '#dc3545';
-    }
+    // Couleur selon le nombre
+    counter.style.color = uniqueChars.size === 0 ? '#6c757d' :
+                         uniqueChars.size <= 10 ? '#28a745' : '#dc3545';
 }
 
 /**
  * Ajoute des caractères depuis le modal
  */
-function addCharFromModal() {
+function addCharsFromModal() {
     const input = document.getElementById('newCharInput');
-    if (!input || !input.value.trim()) {
-        showNotification('Veuillez entrer des caractères à ajouter.', 'warning');
+    if (!input || !input.value) {
+        showNotification('Entrez des caractères à ajouter', 'warning');
         return;
     }
     
-    const text = input.value;
-    const uniqueChars = new Set();
     let addedCount = 0;
+    const uniqueChars = new Set(input.value);
     
-    // Collecter les caractères uniques
-    for (let char of text) {
-        uniqueChars.add(char);
-    }
-    
-    // Ajouter chaque caractère unique qui n'est pas déjà dans la liste
     uniqueChars.forEach(char => {
         if (!state.invalidChars.has(char)) {
             state.invalidChars.add(char);
@@ -1005,200 +1877,171 @@ function addCharFromModal() {
         }
     });
     
-    // Mettre à jour l'affichage
-    updateCharModal();
-    updateCharPreview();
-    
-    // Réinitialiser le champ et le compteur
     input.value = '';
     updateCharCounter();
-    
-    // Sauvegarder et notifier
-    saveOptions();
+    updateCharModalList();
+    updateCharPreview();
+    saveData();
     
     if (addedCount > 0) {
-        showNotification(`${addedCount} caractère(s) unique(s) ajouté(s) à la liste.`, 'success');
+        showNotification(`${addedCount} caractère(s) ajouté(s)`, 'success');
     } else {
-        showNotification('Tous les caractères étaient déjà dans la liste.', 'info');
+        showNotification('Ces caractères sont déjà dans la liste', 'info');
     }
 }
 
 /**
- * Supprime un caractère depuis le modal
+ * Supprime un caractère de la liste
+ * @param {string} char - Caractère à supprimer
  */
-function removeCharFromModal(char) {
+function removeCharFromList(char) {
     state.invalidChars.delete(char);
-    updateCharModal();
+    updateCharModalList();
     updateCharPreview();
-    saveOptions();
-    
-    showNotification('Caractère supprimé de la liste', 'info');
-}
-
-/**
- * Réinitialise les caractères
- */
-function resetChars() {
-    if (confirm('Réinitialiser la liste des caractères aux valeurs par défaut ?')) {
-        state.invalidChars = new Set([
-            '☺', '☻', '♥', '♦', '♣', '♠', '•', '◘', '○', '◙', '♂', '♀', '♪', '♫', '☼',
-            '►', '◄', '↕', '‼', '¶', '§', '▬', '↨', '↑', '↓', '→', '←', '∟', '↔', '▲', '▼',
-            '★', '☆', '✰', '✦', '✧', '❄', '❆', '❖', '✿', '❀', '❁', '❤', '➤', '➥', '➦',
-            '\\', '/', ':', '*', '?', '"', '<', '>', '|', '#', '²', '~', '`', '´',
-            ',', ';', '!', '(', ')', '[', ']', '{', '}', '@', '&', '$', '%', '^',
-            '+', '=', '§', '°', '¨', '£', '€', '¥',
-            '\t', '\n', '\r'
-        ]);
-        
-        updateCharModal();
-        updateCharPreview();
-        saveOptions();
-        
-        showNotification('Caractères réinitialisés', 'success');
-    }
+    saveData();
 }
 
 /**
  * Applique une présélection de caractères
+ * @param {string} chars - Chaîne de caractères à ajouter
  */
 function applyPreset(chars) {
     let addedCount = 0;
     
-    chars.split('').forEach(char => {
+    for (const char of chars) {
         if (!state.invalidChars.has(char)) {
             state.invalidChars.add(char);
             addedCount++;
         }
-    });
+    }
     
-    updateCharModal();
+    updateCharModalList();
     updateCharPreview();
-    saveOptions();
+    saveData();
     
-    if (addedCount > 0) {
-        showNotification(`${addedCount} caractère(s) ajouté(s) depuis la présélection`, 'success');
-    }
+    showNotification(`${addedCount} caractère(s) ajouté(s)`, 'success');
 }
 
-// ============================================================================
-// GESTION DU MODAL
-// ============================================================================
-
 /**
- * Configure les écouteurs du modal
+ * Réinitialise la liste des caractères aux valeurs par défaut
  */
-function setupModalListeners() {
-    // Bouton pour ouvrir le modal
-    const editBtn = document.getElementById('editCharsBtn');
-    if (editBtn) {
-        editBtn.addEventListener('click', openCharModal);
-    }
+function resetChars() {
+    if (!confirm('Réinitialiser la liste des caractères ?')) return;
     
-    // Fermeture du modal
-    const modal = document.getElementById('charModal');
-    if (modal) {
-        // Bouton de fermeture
-        const closeBtn = modal.querySelector('.modal-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeCharModal);
-        }
-        
-        // Fermer en cliquant en dehors
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeCharModal();
-            }
-        });
-        
-        // Touche Échap
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal.classList.contains('show')) {
-                closeCharModal();
-            }
-        });
-    }
+    state.invalidChars = new Set([
+        '☺', '☻', '♥', '♦', '♣', '♠', '•', '◘', '○', '◙', '♂', '♀', '♪', '♫', '☼',
+        '►', '◄', '↕', '‼', '¶', '§', '▬', '↨', '↑', '↓', '→', '←', '∟', '↔', '▲', '▼',
+        '★', '☆', '✰', '✦', '✧', '℃', '←', '▎', '✿', '❀', '❁', '❤', '➤', '➥', '➦',
+        '\\', '/', ':', '*', '?', '"', '<', '>', '|', '#', '²', '~', '`', '´',
+        ',', ';', '!', '(', ')', '[', ']', '{', '}', '@', '&', '$', '%', '^', '=',
+        '\t', '\n', '\r'
+    ]);
     
-    // Boutons du modal
-    const addCharBtn = document.getElementById('addCharBtn');
-    if (addCharBtn) {
-        addCharBtn.addEventListener('click', addCharFromModal);
-    }
+    updateCharModalList();
+    updateCharPreview();
+    saveData();
     
-    const newCharInput = document.getElementById('newCharInput');
-    if (newCharInput) {
-        newCharInput.addEventListener('input', updateCharCounter);
-        newCharInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                addCharFromModal();
-            }
-        });
-    }
-    
-    const resetCharsBtn = document.getElementById('resetCharsBtn');
-    if (resetCharsBtn) {
-        resetCharsBtn.addEventListener('click', resetChars);
-    }
-    
-    const saveCharsBtn = document.getElementById('saveCharsBtn');
-    if (saveCharsBtn) {
-        saveCharsBtn.addEventListener('click', () => {
-            closeCharModal();
-            showNotification('Caractères enregistrés', 'success');
-        });
-    }
-    
-    // Boutons de présélection
-    document.querySelectorAll('.preset-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const chars = e.target.dataset.chars;
-            applyPreset(chars);
-        });
-    });
+    showNotification('Liste réinitialisée', 'success');
 }
 
 // ============================================================================
-// BOUTONS D'ACTION
+// SECTION 13 : FONCTIONS UTILITAIRES
+// Helpers et fonctions de support
 // ============================================================================
 
 /**
- * Configure les écouteurs pour les boutons d'action
+ * Génère un ID unique
+ * @returns {string} ID unique
  */
-function setupActionListeners() {
-    // Nettoyer tous les fichiers
-    const cleanAllBtn = document.getElementById('cleanAllBtn');
-    if (cleanAllBtn) {
-        cleanAllBtn.addEventListener('click', cleanAllFiles);
-    }
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+}
+
+/**
+ * Formate une taille de fichier en unité lisible
+ * @param {number} bytes - Taille en octets
+ * @returns {string} Taille formatée
+ */
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 octets';
     
-    // Télécharger tous les fichiers
-    const downloadAllBtn = document.getElementById('downloadAllBtn');
-    if (downloadAllBtn) {
-        downloadAllBtn.addEventListener('click', downloadAllFiles);
-    }
+    const units = ['octets', 'Ko', 'Mo', 'Go', 'To'];
+    const k = 1024;
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
     
-    // Effacer tous les fichiers
-    const clearAllBtn = document.getElementById('clearAllBtn');
-    if (clearAllBtn) {
-        clearAllBtn.addEventListener('click', clearAllFiles);
-    }
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + units[i];
+}
+
+/**
+ * Détermine le type de fichier
+ * @param {File} file - Fichier
+ * @returns {string} Type de fichier
+ */
+function getFileType(file) {
+    if (!file || !file.type) return 'inconnu';
+    return file.type.split('/')[0] || 'fichier';
+}
+
+/**
+ * Retourne l'icône appropriée pour un type de fichier
+ * @param {File} file - Fichier
+ * @returns {string} Emoji icône
+ */
+function getFileIcon(file) {
+    const type = getFileType(file);
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    
+    // Par extension
+    const extIcons = {
+        pdf: '📕', zip: '📦', rar: '📦', '7z': '📦',
+        doc: '📄', docx: '📄', xls: '📊', xlsx: '📊',
+        ppt: '📽️', pptx: '📽️', txt: '📝',
+        js: '💻', html: '💻', css: '💻', py: '💻', java: '💻'
+    };
+    
+    if (extIcons[ext]) return extIcons[ext];
+    
+    // Par type MIME
+    const typeIcons = {
+        image: '🖼️', audio: '🎵', video: '🎬', text: '📄'
+    };
+    
+    return typeIcons[type] || '📁';
+}
+
+/**
+ * Échappe les caractères HTML
+ * @param {string} text - Texte à échapper
+ * @returns {string} Texte échappé
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // ============================================================================
-// UTILITAIRES
+// SECTION 14 : NOTIFICATIONS
+// Système de notifications toast
 // ============================================================================
 
 /**
- * Affiche une notification
+ * Affiche une notification toast
+ * @param {string} message - Message à afficher
+ * @param {string} type - Type: success, warning, error, info
  */
 function showNotification(message, type = 'info') {
-    // Créer la notification
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
+    notification.className = `notification notification-${type}`;
     notification.setAttribute('role', 'alert');
-    notification.setAttribute('aria-live', 'assertive');
     
-    // Styles
+    const colors = {
+        success: '#28a745',
+        warning: '#ffc107',
+        error: '#dc3545',
+        info: '#17a2b8'
+    };
+    
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -1207,38 +2050,200 @@ function showNotification(message, type = 'info') {
         border-radius: 8px;
         color: white;
         font-weight: 500;
-        z-index: 3000;
-        animation: slideInRight 0.3s ease-out;
+        z-index: 9999;
         max-width: 350px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease;
+        background-color: ${colors[type] || colors.info};
+        white-space: pre-line;
     `;
     
-    // Couleurs
-    const colors = {
-        success: '#28a745',
-        warning: '#ffc107',
-        error: '#dc3545',
-        info: '#17a2b8'
-    };
-    
-    notification.style.backgroundColor = colors[type] || colors.info;
-    
-    // Ajouter au document
+    notification.textContent = message;
     document.body.appendChild(notification);
     
-    // Supprimer après 3 secondes
     setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease-in';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                document.body.removeChild(notification);
-            }
-        }, 300);
-    }, 3000);
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, CONFIG.notificationDuration);
+}
+
+// ============================================================================
+// SECTION 15 : PERSISTANCE DES DONNÉES
+// Sauvegarde et chargement depuis localStorage
+// ============================================================================
+
+/**
+ * Sauvegarde les données dans localStorage
+ */
+function saveData() {
+    try {
+        // Sauvegarder les options
+        localStorage.setItem('upload_options', JSON.stringify(state.options));
+        
+        // Sauvegarder les caractères
+        localStorage.setItem('upload_chars', JSON.stringify([...state.invalidChars]));
+        
+        console.log('💾 Données sauvegardées');
+    } catch (e) {
+        console.error('❌ Erreur de sauvegarde:', e);
+    }
 }
 
 /**
- * Échappe le HTML pour la sécurité
+ * Charge les données depuis localStorage
+ */
+function loadSavedData() {
+    try {
+        // Charger les options
+        const savedOptions = localStorage.getItem('upload_options');
+        if (savedOptions) {
+            state.options = { ...state.options, ...JSON.parse(savedOptions) };
+            
+            // Mettre à jour l'interface
+            const underscoresOption = document.getElementById('underscoresOption');
+            const lowercaseOption = document.getElementById('lowercaseOption');
+            const prefixOption = document.getElementById('prefixOption');
+            const prefixText = document.getElementById('prefixText');
+            const prefixInputContainer = document.getElementById('prefixInputContainer');
+            
+            if (underscoresOption) underscoresOption.checked = state.options.useUnderscores;
+            if (lowercaseOption) lowercaseOption.checked = state.options.toLowercase;
+            if (prefixOption) prefixOption.checked = state.options.usePrefix;
+            if (prefixText) prefixText.value = state.options.prefix;
+            if (prefixInputContainer) {
+                prefixInputContainer.style.display = state.options.usePrefix ? 'block' : 'none';
+            }
+        }
+        
+        // Charger les caractères
+        const savedChars = localStorage.getItem('upload_chars');
+        if (savedChars) {
+            state.invalidChars = new Set(JSON.parse(savedChars));
+        }
+        
+        console.log('📂 Données chargées');
+    } catch (e) {
+        console.error('❌ Erreur de chargement:', e);
+    }
+}
+
+// ============================================================================
+// SECTION 16 : STYLES D'ANIMATION
+// Injection des keyframes CSS pour les notifications
+// ============================================================================
+
+/**
+ * Ajoute les styles d'animation au document
+ */
+function addAnimationStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// ============================================================================
+// SECTION 17 : DÉMARRAGE DE L'APPLICATION
+// Point d'entrée et exposition des fonctions globales
+// ============================================================================
+
+// Ajouter les styles d'animation
+addAnimationStyles();
+
+// Initialiser quand le DOM est prêt
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
+
+// Exposer les fonctions nécessaires globalement
+window.cleanFile = cleanFile;
+window.downloadFile = downloadFile;
+window.removeFile = removeFile;
+window.removeCharFromList = removeCharFromList;
+
+// ==========================================================================
+// FIN DU FICHIER UPLOAD.JS
+// ==========================================================================
+
+// ============================================================================
+// SECTION 13 : FONCTIONS UTILITAIRES
+// Helpers et fonctions de support
+// ============================================================================
+
+/**
+ * Génère un ID unique
+ * @returns {string} ID unique
+ */
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+}
+
+/**
+ * Formate une taille de fichier en unité lisible
+ * @param {number} bytes - Taille en octets
+ * @returns {string} Taille formatée
+ */
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 octets';
+    
+    const units = ['octets', 'Ko', 'Mo', 'Go', 'To'];
+    const k = 1024;
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + units[i];
+}
+
+/**
+ * Détermine le type de fichier
+ * @param {File} file - Fichier
+ * @returns {string} Type de fichier
+ */
+function getFileType(file) {
+    if (!file || !file.type) return 'inconnu';
+    return file.type.split('/')[0] || 'fichier';
+}
+
+/**
+ * Retourne l'icône appropriée pour un type de fichier
+ * @param {File} file - Fichier
+ * @returns {string} Emoji icône
+ */
+function getFileIcon(file) {
+    const type = getFileType(file);
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    
+    // Par extension
+    const extIcons = {
+        pdf: '📕', zip: '📦', rar: '📦', '7z': '📦',
+        doc: '📄', docx: '📄', xls: '📊', xlsx: '📊',
+        ppt: '📽️', pptx: '📽️', txt: '📝',
+        js: '💻', html: '💻', css: '💻', py: '💻', java: '💻'
+    };
+    
+    if (extIcons[ext]) return extIcons[ext];
+    
+    // Par type MIME
+    const typeIcons = {
+        image: '🖼️', audio: '🎵', video: '🎬', text: '📄'
+    };
+    
+    return typeIcons[type] || '📁';
+}
+
+/**
+ * Échappe les caractères HTML
+ * @param {string} text - Texte à échapper
+ * @returns {string} Texte échappé
  */
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -1246,53 +2251,157 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// ============================================================================
+// SECTION 14 : NOTIFICATIONS
+// Système de notifications toast
+// ============================================================================
+
 /**
- * Ajoute les styles CSS pour les animations
+ * Affiche une notification toast
+ * @param {string} message - Message à afficher
+ * @param {string} type - Type: success, warning, error, info
+ */
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.setAttribute('role', 'alert');
+    
+    const colors = {
+        success: '#28a745',
+        warning: '#ffc107',
+        error: '#dc3545',
+        info: '#17a2b8'
+    };
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 9999;
+        max-width: 350px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease;
+        background-color: ${colors[type] || colors.info};
+        white-space: pre-line;
+    `;
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, CONFIG.notificationDuration);
+}
+
+// ============================================================================
+// SECTION 15 : PERSISTANCE DES DONNÉES
+// Sauvegarde et chargement depuis localStorage
+// ============================================================================
+
+/**
+ * Sauvegarde les données dans localStorage
+ */
+function saveData() {
+    try {
+        // Sauvegarder les options
+        localStorage.setItem('upload_options', JSON.stringify(state.options));
+        
+        // Sauvegarder les caractères
+        localStorage.setItem('upload_chars', JSON.stringify([...state.invalidChars]));
+        
+        console.log('💾 Données sauvegardées');
+    } catch (e) {
+        console.error('❌ Erreur de sauvegarde:', e);
+    }
+}
+
+/**
+ * Charge les données depuis localStorage
+ */
+function loadSavedData() {
+    try {
+        // Charger les options
+        const savedOptions = localStorage.getItem('upload_options');
+        if (savedOptions) {
+            state.options = { ...state.options, ...JSON.parse(savedOptions) };
+            
+            // Mettre à jour l'interface
+            const underscoresOption = document.getElementById('underscoresOption');
+            const lowercaseOption = document.getElementById('lowercaseOption');
+            const prefixOption = document.getElementById('prefixOption');
+            const prefixText = document.getElementById('prefixText');
+            const prefixInputContainer = document.getElementById('prefixInputContainer');
+            
+            if (underscoresOption) underscoresOption.checked = state.options.useUnderscores;
+            if (lowercaseOption) lowercaseOption.checked = state.options.toLowercase;
+            if (prefixOption) prefixOption.checked = state.options.usePrefix;
+            if (prefixText) prefixText.value = state.options.prefix;
+            if (prefixInputContainer) {
+                prefixInputContainer.style.display = state.options.usePrefix ? 'block' : 'none';
+            }
+        }
+        
+        // Charger les caractères
+        const savedChars = localStorage.getItem('upload_chars');
+        if (savedChars) {
+            state.invalidChars = new Set(JSON.parse(savedChars));
+        }
+        
+        console.log('📂 Données chargées');
+    } catch (e) {
+        console.error('❌ Erreur de chargement:', e);
+    }
+}
+
+// ============================================================================
+// SECTION 16 : STYLES D'ANIMATION
+// Injection des keyframes CSS pour les notifications
+// ============================================================================
+
+/**
+ * Ajoute les styles d'animation au document
  */
 function addAnimationStyles() {
     const style = document.createElement('style');
     style.textContent = `
         @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
-        
         @keyframes slideOutRight {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
         }
     `;
     document.head.appendChild(style);
 }
 
 // ============================================================================
-// DÉMARRAGE
+// SECTION 17 : DÉMARRAGE DE L'APPLICATION
+// Point d'entrée et exposition des fonctions globales
 // ============================================================================
 
 // Ajouter les styles d'animation
 addAnimationStyles();
 
-// Initialiser l'application quand le DOM est chargé
+// Initialiser quand le DOM est prêt
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
     init();
 }
 
-// Exposer les fonctions globales
+// Exposer les fonctions nécessaires globalement
 window.cleanFile = cleanFile;
 window.downloadFile = downloadFile;
 window.removeFile = removeFile;
-window.removeCharFromModal = removeCharFromModal;
+window.removeCharFromList = removeCharFromList;
+
+// ==========================================================================
+// FIN DU FICHIER UPLOAD.JS
+// ==========================================================================

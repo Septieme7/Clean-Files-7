@@ -8,7 +8,7 @@
     <title>Nettoyeur de Noms de Fichiers | Supprimez les Caractères Invalides</title>
     <meta name="description" content="Outil gratuit pour nettoyer les noms de fichiers en supprimant les émoticônes, caractères spéciaux et symboles invalides tout en conservant les extensions.">
     <meta name="keywords" content="nettoyeur fichiers, caractères invalides, émoticônes, extension fichiers, outil gratuit">
-    <meta name="author" content="777 Tools">
+    <meta name="author" content="Seven7 Tools">
     
     <!-- Favicons et manifest -->
     <link rel="apple-touch-icon" sizes="180x180" href="assets/icon/apple-touch-icon.png">
@@ -24,10 +24,10 @@
     <meta property="og:title" content="Nettoyeur de Noms de Fichiers">
     <meta property="og:description" content="Outil gratuit pour nettoyer les noms de fichiers en supprimant les caractères invalides">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://votredomaine.com">
+    <meta property="og:url" content="https://cleanfiles7.netlify.app/">
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="https://votredomaine.com">
+    <link rel="canonical" href="https://cleanfiles7.netlify.app/">
     
     <!-- Schema.org markup pour Google -->
     <script type="application/ld+json">
@@ -36,7 +36,7 @@
         "@type": "WebApplication",
         "name": "Nettoyeur de Noms de Fichiers",
         "description": "Outil pour nettoyer les noms de fichiers en supprimant les caractères invalides",
-        "url": "https://votredomaine.com",
+        "url": "https://cleanfiles7.netlify.app",
         "applicationCategory": "UtilityApplication",
         "operatingSystem": "Any"
     }
@@ -118,6 +118,31 @@
                     <ul id="charactersList">
                         <!-- Les caractères seront ajoutés dynamiquement par JavaScript -->
                     </ul>
+                </div>
+                
+                <!-- Présélections rapides de caractères -->
+                <div class="preset-chars" style="margin: 1.5rem 0;">
+                    <h3>Présélections Rapides</h3>
+                    <div class="preset-buttons" role="group" aria-label="Groupes de caractères prédéfinis">
+                        <button class="preset-btn" type="button" data-chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ" aria-label="Ajouter les majuscules A-Z">
+                            Majuscules (A-Z)
+                        </button>
+                        <button class="preset-btn" type="button" data-chars="abcdefghijklmnopqrstuvwxyz" aria-label="Ajouter les minuscules a-z">
+                            Minuscules (a-z)
+                        </button>
+                        <button class="preset-btn" type="button" data-chars="0123456789" aria-label="Ajouter les chiffres 0-9">
+                            Chiffres (0-9)
+                        </button>
+                        <button class="preset-btn" type="button" data-chars="☺☻♥♦♣♠•◘○◙♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼★☆✰✦✧℃▎✿❀❁❤➤➥➦" aria-label="Ajouter les émoticônes">
+                            Émoticônes
+                        </button>
+                        <button class="preset-btn" type="button" data-chars="\/:*?&quot;&lt;&gt;|#" aria-label="Ajouter les caractères spéciaux">
+                            Spéciaux
+                        </button>
+                        <button class="preset-btn" type="button" data-chars=",;.!?()[]{}@&amp;" aria-label="Ajouter la ponctuation">
+                            Ponctuation
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="controls">

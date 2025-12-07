@@ -319,7 +319,15 @@ function addCustomChars() {
     customCharsInput.value = '';
     updateCharCount(); // Réinitialiser le compteur
     
+    // Sauvegarder les caractères
+    savePreset();
+    
     showNotification(`${addedCount} caractère(s) unique(s) ajouté(s) à la liste. Ils seront remplacés par des espaces.`, 'success');
+    
+    // Re-nettoyer les noms si des résultats sont affichés
+    if (document.querySelector('.file-item')) {
+        cleanAllFileNames();
+    }
 }
 
 /**
@@ -343,7 +351,13 @@ function resetCharList() {
     ]);
     
     displayInvalidChars();
+    savePreset();
     showNotification('Liste des caractères réinitialisée avec succès.', 'success');
+    
+    // Re-nettoyer les noms si des résultats sont affichés
+    if (document.querySelector('.file-item')) {
+        cleanAllFileNames();
+    }
 }
 
 // ============================================================================
@@ -466,6 +480,73 @@ function initializeWithExamples() {
     showNotification('Exemples chargés. Caractères invalides seront remplacés par des espaces.', 'info');
 }
 
+/**
+ * Configure les événements des boutons de présélection de caractères
+ * Permet d'ajouter rapidement des groupes de caractères prédéfinis
+ */
+function setupPresetButtons() {
+    const presetButtons = document.querySelectorAll('.preset-btn');
+    
+    presetButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const chars = e.target.dataset.chars;
+            if (!chars) return;
+            
+            // Ajouter chaque caractère à la liste des caractères invalides
+            let addedCount = 0;
+            for (const char of chars) {
+                if (!invalidChars.has(char)) {
+                    invalidChars.add(char);
+                    addedCount++;
+                }
+            }
+            
+            // Mettre à jour l'affichage
+            displayInvalidChars();
+            
+            // Afficher une notification
+            if (addedCount > 0) {
+                showNotification(`${addedCount} caractère(s) ajouté(s) à la liste`, 'success');
+            } else {
+                showNotification('Ces caractères sont déjà dans la liste', 'info');
+            }
+            
+            // Re-nettoyer les noms si des résultats sont affichés
+            if (document.querySelector('.file-item')) {
+                cleanAllFileNames();
+            }
+            
+            // Sauvegarder dans localStorage
+            savePreset();
+        });
+    });
+}
+
+/**
+ * Sauvegarde les caractères invalides dans localStorage
+ */
+function savePreset() {
+    try {
+        localStorage.setItem('invalidChars', JSON.stringify([...invalidChars]));
+    } catch (e) {
+        console.warn('Impossible de sauvegarder les caractères:', e);
+    }
+}
+
+/**
+ * Charge les caractères invalides depuis localStorage
+ */
+function loadPreset() {
+    try {
+        const saved = localStorage.getItem('invalidChars');
+        if (saved) {
+            invalidChars = new Set(JSON.parse(saved));
+        }
+    } catch (e) {
+        console.warn('Impossible de charger les caractères sauvegardés:', e);
+    }
+}
+
 // ============================================================================
 // INITIALISATION DE L'APPLICATION
 // ============================================================================
@@ -475,6 +556,9 @@ function initializeWithExamples() {
  * Configure les écouteurs d'événements et initialise les composants
  */
 function initApp() {
+    // Charger les caractères sauvegardés
+    loadPreset();
+    
     // Afficher la liste des caractères invalides
     displayInvalidChars();
     
@@ -484,6 +568,9 @@ function initApp() {
     document.getElementById('addCharsBtn')?.addEventListener('click', addCustomChars);
     document.getElementById('resetCharsBtn')?.addEventListener('click', resetCharList);
     document.getElementById('clearBtn')?.addEventListener('click', clearFileList);
+    
+    // Configurer les boutons de présélection
+    setupPresetButtons();
     
     // Configurer le compteur de caractères
     const customCharsInput = document.getElementById('customChars');
